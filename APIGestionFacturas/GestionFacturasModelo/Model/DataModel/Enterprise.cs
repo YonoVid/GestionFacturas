@@ -7,7 +7,7 @@ namespace GestionFacturasModelo.Model.DataModel
         [Required, StringLength(50)]
         public string Name { get; set; } = string.Empty;
 
-        [Required]
+        
         public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
     }
 }
