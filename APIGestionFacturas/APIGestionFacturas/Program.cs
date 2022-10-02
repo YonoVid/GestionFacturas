@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using APIGestionFacturas.DataAccess;
 using APIGestionFacturas.Services;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,10 @@ var connectionString = builder.Configuration.GetConnectionString(CONNECTIONSTRIN
 
 builder.Services.AddDbContext<GestionFacturasContext>(options => options.UseSqlServer(connectionString));
 
+// Añadir servicio de autorización de JWT
+builder.Services.AddJwtTokenService(builder.Configuration);
+
+
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -25,10 +30,43 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEnterpriseService, EnterpriseService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 
+// Añadir autorización
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnlyPolicy", policy => policy.RequireClaim("UserOnly", "Admin"));
+});
+
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Configurar para que Swagger se encargue de autorizacion de Jwt 
+builder.Services.AddSwaggerGen(options =>
+{
+    //Definimos seguridad
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Header de autenticación JWT usando esquema Bearer"
+    });
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
 
 
 // Habilitar CORS

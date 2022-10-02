@@ -4,19 +4,29 @@ namespace APIGestionFacturas.Services
 {
     public class UserService : IUserService
     {
-        public IEnumerable<Enterprise> getUserEnterprises()
+        public IEnumerable<Enterprise> getUserEnterprises(IQueryable<User> users, int id)
         {
-            throw new NotImplementedException();
+
+            if(users.Any(user => user.Id == id))
+            {
+                return users.FirstOrDefault(user => user.Id == id).Enterprises;
+            }
+            return new List<Enterprise>();
         }
 
-        public User getUserLogin(string email, string password)
+        public User? getUserLogin(IQueryable<User> users, UserLogin userLogin)
         {
-            throw new NotImplementedException();
+            return users.FirstOrDefault(user => user.Email.ToUpper() == userLogin.Email.ToUpper() &&
+                                        user.Password.Equals(userLogin.Password));
         }
 
-        public bool userExists(int id)
+        public bool userExists(IQueryable<User> users, UserLogin userToCheck)
         {
-            return false;//_context.Users.Any(e => e.Id == id);
+            return users.Any(user => user.Email.ToUpper() == userToCheck.Email.ToUpper());//_context.Users.Any(e => e.Id == id);
+        }
+        public bool userExists(IQueryable<User> users, User userToCheck)
+        {
+            return users.Any(user => user.Email.ToUpper() == userToCheck.Email.ToUpper());//_context.Users.Any(e => e.Id == id);
         }
     }
 }

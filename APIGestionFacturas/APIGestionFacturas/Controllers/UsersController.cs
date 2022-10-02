@@ -4,29 +4,90 @@ using Microsoft.EntityFrameworkCore;
 using APIGestionFacturas.DataAccess;
 using GestionFacturasModelo.Model.DataModel;
 using APIGestionFacturas.Services;
+using APIGestionFacturas.Helpers;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace APIGestionFacturas.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]/[action]")]
     [ApiController]
     public class UsersController : ControllerBase
     {
         private readonly GestionFacturasContext _context;
         private readonly IUserService _userService;
-        //private readonly JwtSettings _jwtSettings;
+        private readonly JwtSettings _jwtSettings;
 
         public UsersController(GestionFacturasContext context,
-                                IUserService userService)
-                                //JwtSettings jwtSettings)
+                                IUserService userService,
+                                JwtSettings jwtSettings)
         {
             _context = context;
             _userService = userService;
-            //_jwtSettings = jwtSettings;
+            _jwtSettings = jwtSettings;
         }
 
 
+        [HttpPost]
+        public IActionResult Login(UserLogin userLogin)
+        {
+            try
+            {
+                var Token = new UserToken();
+                var Valid = _userService.userExists(_context.Users, userLogin);
+
+                if (Valid)
+                {
+                    var user = _userService.getUserLogin(_context.Users, userLogin);
+                    if (user != null)
+                    {
+                        Token = JwtHelpers.GenTokenKey(new UserToken()
+                        {
+                            UserName = user.Name,
+                            EmailId = user.Email,
+                            Id = user.Id,
+                            UserRol= user.Rol,
+                            GuidId = Guid.NewGuid()
+                        }, _jwtSettings);
+                    }
+                    else return BadRequest("Wrong password");
+                }
+                else return BadRequest("User not found");
+
+                return Ok(new
+                {
+                    Token,
+                    Token.UserName
+                });
+            }
+            catch (Exception ex)
+            {
+
+                throw new Exception("GetToken error", ex);
+            }
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<User>> Register(User user)
+        {
+            if(!_userService.userExists(_context.Users, user))
+            {
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                return CreatedAtAction("GetUser", new { id = user.Id }, user);
+            }
+
+            return BadRequest("El usuario ya existe");
+            
+        }
+        
+
+        // **** CRUD de la tabla ****
+
         // GET: api/Users
         [HttpGet]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(GetUsers)}:: RUNNING FUNCTION CALL");
@@ -35,6 +96,7 @@ namespace APIGestionFacturas.Controllers
 
         // GET: api/Users/5
         [HttpGet("{id}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<ActionResult<User>> GetUser(int id)
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(GetUsers)}:: RUNNING FUNCTION CALL");
@@ -51,7 +113,7 @@ namespace APIGestionFacturas.Controllers
         // PUT: api/Users/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<IActionResult> PutUser(int id, User user)
         {
            // _logger.LogInformation($"{nameof(UsersController)} - {nameof(PutUser)}:: RUNNING FUNCTION CALL");
@@ -69,7 +131,7 @@ namespace APIGestionFacturas.Controllers
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                if (!_userService.userExists(id))
+                if (!_userService.userExists(_context.Users, user))
                 {
                     return NotFound();
                 }
@@ -87,7 +149,7 @@ namespace APIGestionFacturas.Controllers
         // POST: api/Users
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<ActionResult<User>> PostUser(User user)
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(PostUser)}:: RUNNING FUNCTION CALL");
@@ -100,7 +162,7 @@ namespace APIGestionFacturas.Controllers
 
         // DELETE: api/Users/5
         [HttpDelete("{id}")]
-        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<IActionResult> DeleteUser(int id)
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(DeleteUser)}:: RUNNING FUNCTION CALL");
