@@ -92,3 +92,27 @@ GO
 COMMIT;
 GO
 
+
+
+-- #### Usuario administrador inicial para testeo ####
+
+USE [DbGestionFacturas]
+GO
+
+INSERT INTO [dbo].[Users]
+           ([Name]
+           ,[Email]
+           ,[Password]
+	   ,[Rol]
+           ,[CreatedBy]
+           ,[CreatedDate]
+	   ,[IsDeleted])
+     VALUES
+           ('admin'
+           ,'admin@admin.com'
+           ,'admin'
+	   ,0
+           ,'admin'
+           ,GETDATE()
+	   ,0)
+GO
