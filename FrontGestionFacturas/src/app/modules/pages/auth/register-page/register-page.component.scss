@@ -1,0 +1,28 @@
+:host{
+    display :flex;
+    justify-content: center;
+    margin: 4em 0em;
+}
+
+mat-card{
+    max-width: 50em;
+    margin: 2em auto;
+    text-align: center;
+}
+
+mat-card-header{
+    display: unset;
+}
+
+mat-card-content{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;    
+}
+
+mat-form-field{
+    display: block;
+    min-width: 20em;
+    width: 100%;
+}

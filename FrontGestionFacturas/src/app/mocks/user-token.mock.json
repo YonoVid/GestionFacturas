@@ -1,0 +1,14 @@
+{
+    "token": {
+        "id": 3,
+        "token": "KEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEY",
+        "userName": "admin",
+        "userRol": 0,
+        "validity": "02:42:32.5686371",
+        "refreshToken": "",
+        "emailId": "",
+        "guidId": "00000000-0000-0000-0000-000000000000",
+        "expireTime": "0001-01-01T00:00:00"
+    },
+    "userName": "admin"
+}
