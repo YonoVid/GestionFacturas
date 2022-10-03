@@ -14,13 +14,13 @@ namespace APIGestionFacturas.Services
             return new List<Enterprise>();
         }
 
-        public User? getUserLogin(IQueryable<User> users, UserLogin userLogin)
+        public User? getUserLogin(IQueryable<User> users, UserAuthorization userLogin)
         {
             return users.FirstOrDefault(user => user.Email.ToUpper() == userLogin.Email.ToUpper() &&
                                         user.Password.Equals(userLogin.Password));
         }
 
-        public bool userExists(IQueryable<User> users, UserLogin userToCheck)
+        public bool userExists(IQueryable<User> users, UserAuthorization userToCheck)
         {
             return users.Any(user => user.Email.ToUpper() == userToCheck.Email.ToUpper());//_context.Users.Any(e => e.Id == id);
         }

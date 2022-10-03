@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace APIGestionFacturas.Controllers
 {
-    [Route("api/[controller]/[action]")]
+    [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
     {
@@ -29,7 +29,8 @@ namespace APIGestionFacturas.Controllers
 
 
         [HttpPost]
-        public IActionResult Login(UserLogin userLogin)
+        [Route("[action]")]
+        public IActionResult Login(UserAuthorization userLogin)
         {
             try
             {
@@ -68,10 +69,13 @@ namespace APIGestionFacturas.Controllers
         }
 
         [HttpPost]
+        [Route("[action]")]
         public async Task<ActionResult<User>> Register(User user)
         {
             if(!_userService.userExists(_context.Users, user))
             {
+                user.CreatedBy = "Admin";
+
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
@@ -81,7 +85,30 @@ namespace APIGestionFacturas.Controllers
             return BadRequest("El usuario ya existe");
             
         }
-        
+
+        [HttpPost]
+        [Route("[action]/{id}&{rol}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
+        public async Task<ActionResult<User>> ChangeRol(int id, UserRol rol)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user != null)
+            {
+                user.Rol = rol;                                     //Se actualiza el rol
+                user.UpdatedBy = HttpContext.User.Identity.Name;    //Se indica el usuario que actualiza
+                user.UpdatedDate = DateTime.Now;                    //Se actualiza tiempo de último cambio
+                _context.Users.Update(user);                        //Se actualiza la información del usuario
+                _context.Entry(user).State = EntityState.Modified;
+                //Actualización asíncrona de la base de datos
+                await _context.SaveChangesAsync();
+
+                return CreatedAtAction("GetUser", new { id = user.Id }, user);
+            }
+
+            return BadRequest("Usuario no encontrado");
+
+        }
+
 
         // **** CRUD de la tabla ****
 
@@ -114,19 +141,28 @@ namespace APIGestionFacturas.Controllers
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
-        public async Task<IActionResult> PutUser(int id, User user)
+        public async Task<IActionResult> PutUser(int id, UserEditableTemplate userData)
         {
            // _logger.LogInformation($"{nameof(UsersController)} - {nameof(PutUser)}:: RUNNING FUNCTION CALL");
 
-            if (id != user.Id)
+            User? user = await _context.Users.FindAsync(id);
+
+            if(user == null)
             {
                 return BadRequest();
             }
 
-            _context.Entry(user).State = EntityState.Modified;
-
             try
             {
+                if (userData.Name != null) { user.Name = userData.Name; }
+                if (userData.Password != null) { user.Password = userData.Password; }
+                if (userData.Email != null) { user.Email= userData.Email; }
+                if (userData.Rol != null) { user.Rol = (UserRol)userData.Rol; }
+
+                _context.Users.Update(user);
+
+                _context.Entry(user).State = EntityState.Modified;
+
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException ex)
@@ -143,7 +179,7 @@ namespace APIGestionFacturas.Controllers
                 }
             }
 
-            return NoContent();
+            return CreatedAtAction("GetUser", new { id = user.Id }, user);
         }
 
         // POST: api/Users
