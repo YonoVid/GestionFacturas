@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using GestionFacturasModelo.Model.DataModel;
+using System.ComponentModel.DataAnnotations;
 
-namespace GestionFacturasModelo.Model.DataModel
+namespace GestionFacturasModelo.Model.Templates
 {
-    public class UserEditableTemplate
+    public class UserEditable
     {
         [StringLength(20)]
         public string? Name { get; set; } = string.Empty;
@@ -10,6 +11,6 @@ namespace GestionFacturasModelo.Model.DataModel
         public string? Email { get; set; } = string.Empty;
         [StringLength(30)]
         public string? Password { get; set; } = string.Empty;
-        public UserRol? Rol { get; set; } = UserRol.USUARIO;
+        public UserRol? Rol { get; set; } = UserRol.USER;
     }
 }

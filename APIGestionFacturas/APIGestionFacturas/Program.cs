@@ -29,6 +29,7 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEnterpriseService, EnterpriseService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+builder.Services.AddScoped<IInvoiceLineService, InvoiceLineService>();
 
 // Añadir autorización
 builder.Services.AddAuthorization(options =>

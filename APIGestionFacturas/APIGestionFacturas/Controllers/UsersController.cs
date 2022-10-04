@@ -7,6 +7,7 @@ using APIGestionFacturas.Services;
 using APIGestionFacturas.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using GestionFacturasModelo.Model.Templates;
 
 namespace APIGestionFacturas.Controllers
 {
@@ -14,9 +15,9 @@ namespace APIGestionFacturas.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        private readonly GestionFacturasContext _context;
-        private readonly IUserService _userService;
-        private readonly JwtSettings _jwtSettings;
+        private readonly GestionFacturasContext _context;       //Contexto con las referencias a tablas de la base de datos
+        private readonly IUserService _userService;             //Servicio relacionado a los usuarios
+        private readonly JwtSettings _jwtSettings;              //Configuración de JWT
 
         public UsersController(GestionFacturasContext context,
                                 IUserService userService,
@@ -51,9 +52,9 @@ namespace APIGestionFacturas.Controllers
                             GuidId = Guid.NewGuid()
                         }, _jwtSettings);
                     }
-                    else return BadRequest("Wrong password");
+                    else return BadRequest("Contraseña incorrecta");
                 }
-                else return BadRequest("User not found");
+                else return BadRequest("Usuario no encontrado");
 
                 return Ok(new
                 {
@@ -79,6 +80,7 @@ namespace APIGestionFacturas.Controllers
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
+                user.Password = "*********";
                 return CreatedAtAction("GetUser", new { id = user.Id }, user);
             }
 
@@ -141,7 +143,7 @@ namespace APIGestionFacturas.Controllers
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
-        public async Task<IActionResult> PutUser(int id, UserEditableTemplate userData)
+        public async Task<IActionResult> PutUser(int id, UserEditable userData)
         {
            // _logger.LogInformation($"{nameof(UsersController)} - {nameof(PutUser)}:: RUNNING FUNCTION CALL");
 
@@ -154,16 +156,18 @@ namespace APIGestionFacturas.Controllers
 
             try
             {
+                //Se actualiza cada propiedad del usuario si se ha incluido en los datos recibidos
                 if (userData.Name != null) { user.Name = userData.Name; }
                 if (userData.Password != null) { user.Password = userData.Password; }
                 if (userData.Email != null) { user.Email= userData.Email; }
                 if (userData.Rol != null) { user.Rol = (UserRol)userData.Rol; }
 
+                //Se actualizan la base de datos con los cambios
                 _context.Users.Update(user);
 
                 _context.Entry(user).State = EntityState.Modified;
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();  //Se guardan los cambios de manera asíncrona
             }
             catch (DbUpdateConcurrencyException ex)
             {

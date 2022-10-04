@@ -4,12 +4,12 @@ namespace APIGestionFacturas.Services
 {
     public class UserService : IUserService
     {
-        public IEnumerable<Enterprise> getUserEnterprises(IQueryable<User> users, int id)
+        public IEnumerable<Enterprise> getUserEnterprises(IQueryable<Enterprise> enterprises, int id)
         {
 
-            if(users.Any(user => user.Id == id))
+            if(enterprises.Any(enterprises => enterprises.User.Id == id))
             {
-                return users.FirstOrDefault(user => user.Id == id).Enterprises;
+                return enterprises.Where(enterprise => enterprise.User.Id == id);
             }
             return new List<Enterprise>();
         }

@@ -88,11 +88,14 @@ namespace APIGestionFacturas.Migrations
                     b.Property<DateTime?>("DeletedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("EnterpriseId")
+                    b.Property<int>("EnterpriseId")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<int>("TaxPercentage")
+                        .HasColumnType("int");
 
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("nvarchar(max)");
@@ -143,15 +146,15 @@ namespace APIGestionFacturas.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("real");
 
+                    b.Property<int>("Quantity")
+                        .HasMaxLength(50)
+                        .HasColumnType("int");
+
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("quantity")
-                        .HasMaxLength(50)
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -218,16 +221,22 @@ namespace APIGestionFacturas.Migrations
 
             modelBuilder.Entity("GestionFacturasModelo.Model.DataModel.Enterprise", b =>
                 {
-                    b.HasOne("GestionFacturasModelo.Model.DataModel.User", null)
-                        .WithMany("Enterprises")
+                    b.HasOne("GestionFacturasModelo.Model.DataModel.User", "User")
+                        .WithMany()
                         .HasForeignKey("UserId");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("GestionFacturasModelo.Model.DataModel.Invoice", b =>
                 {
-                    b.HasOne("GestionFacturasModelo.Model.DataModel.Enterprise", null)
-                        .WithMany("Invoices")
-                        .HasForeignKey("EnterpriseId");
+                    b.HasOne("GestionFacturasModelo.Model.DataModel.Enterprise", "Enterprise")
+                        .WithMany()
+                        .HasForeignKey("EnterpriseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Enterprise");
                 });
 
             modelBuilder.Entity("GestionFacturasModelo.Model.DataModel.InvoiceLine", b =>
@@ -237,19 +246,9 @@ namespace APIGestionFacturas.Migrations
                         .HasForeignKey("InvoiceId");
                 });
 
-            modelBuilder.Entity("GestionFacturasModelo.Model.DataModel.Enterprise", b =>
-                {
-                    b.Navigation("Invoices");
-                });
-
             modelBuilder.Entity("GestionFacturasModelo.Model.DataModel.Invoice", b =>
                 {
                     b.Navigation("InvoiceLines");
-                });
-
-            modelBuilder.Entity("GestionFacturasModelo.Model.DataModel.User", b =>
-                {
-                    b.Navigation("Enterprises");
                 });
 #pragma warning restore 612, 618
         }

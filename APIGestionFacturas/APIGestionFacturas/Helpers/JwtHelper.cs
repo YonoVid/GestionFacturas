@@ -19,12 +19,12 @@ namespace APIGestionFacturas.Helpers
 
             };
 
-            if (userAccounts.UserRol == UserRol.ADMINSITRADOR)
+            if (userAccounts.UserRol == UserRol.ADMINISTRATOR)
             {
                 claims.Add(new Claim(ClaimTypes.Role, "Administrator"));
                 claims.Add(new Claim("UserOnly", "Admin"));
             }
-            else if (userAccounts.UserRol == UserRol.USUARIO)
+            else if (userAccounts.UserRol == UserRol.USER)
             {
                 claims.Add(new Claim(ClaimTypes.Role, "User"));
                 claims.Add(new Claim("UserOnly", "User"));
