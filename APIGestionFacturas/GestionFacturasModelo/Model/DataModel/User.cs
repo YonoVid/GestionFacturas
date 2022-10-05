@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using GestionFacturasModelo.Model.Templates;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
 namespace GestionFacturasModelo.Model.DataModel
@@ -8,6 +9,15 @@ namespace GestionFacturasModelo.Model.DataModel
     [Index(nameof(Email), IsUnique = true)]
     public class User : BaseEntity
     {
+        User() { }
+        public User(UserEditable data)
+        {
+            Name = data.Name;
+            Email = data.Email;
+            Password = data.Password;
+            Rol = (UserRol)data.Rol;
+        }
+
         [Required, StringLength(20)]
         public string Name { get; set; } = string.Empty;
         [Required, StringLength(50)]

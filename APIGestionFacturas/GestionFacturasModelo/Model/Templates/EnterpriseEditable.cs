@@ -9,8 +9,6 @@ namespace GestionFacturasModelo.Model.Templates
         [StringLength(50)]
         public string? Name { get; set; } = String.Empty;
         
-        public User? User { get; set; }
-        [ForeignKey("User")]
         public int? UserId { get; set;}
         
     }

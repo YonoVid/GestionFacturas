@@ -13,7 +13,6 @@ namespace GestionFacturasModelo.Model.DataModel
         public Enterprise (EnterpriseEditable data)
         {
             Name = data.Name;
-            User = data.User;
             UserId = data.UserId;
         }
 

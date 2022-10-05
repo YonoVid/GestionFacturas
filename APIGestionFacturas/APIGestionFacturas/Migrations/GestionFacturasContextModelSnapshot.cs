@@ -94,6 +94,10 @@ namespace APIGestionFacturas.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("TaxPercentage")
                         .HasColumnType("int");
 
@@ -131,7 +135,7 @@ namespace APIGestionFacturas.Migrations
                     b.Property<DateTime?>("DeletedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("InvoiceId")
+                    b.Property<int>("InvoiceId")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
@@ -241,14 +245,13 @@ namespace APIGestionFacturas.Migrations
 
             modelBuilder.Entity("GestionFacturasModelo.Model.DataModel.InvoiceLine", b =>
                 {
-                    b.HasOne("GestionFacturasModelo.Model.DataModel.Invoice", null)
-                        .WithMany("InvoiceLines")
-                        .HasForeignKey("InvoiceId");
-                });
+                    b.HasOne("GestionFacturasModelo.Model.DataModel.Invoice", "Invoice")
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-            modelBuilder.Entity("GestionFacturasModelo.Model.DataModel.Invoice", b =>
-                {
-                    b.Navigation("InvoiceLines");
+                    b.Navigation("Invoice");
                 });
 #pragma warning restore 612, 618
         }

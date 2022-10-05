@@ -2,6 +2,7 @@
 using APIGestionFacturas.Services;
 using GestionFacturasModelo.Model.DataModel;
 using GestionFacturasModelo.Model.Templates;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -31,20 +32,43 @@ namespace APIGestionFacturas.Controllers
 
         // GET: api/Invoice
         [HttpGet]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<IEnumerable<Invoice>>> GetInvoices()
         {
+
+            var invoices = await _invoiceService.getAvailableInvoices(_context.Invoices, HttpContext.User).ToListAsync();
+
+            if(invoices != null)
+            {
+                return invoices;
+            }
+
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(GetUsers)}:: RUNNING FUNCTION CALL");
-            return await _context.Invoices.ToListAsync();
+
+            return new List<Invoice>();
+        }
+
+        [HttpGet]
+        [Route("[action]/{id}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
+        public async Task<ActionResult<IEnumerable<Invoice>>> GetEnterpriseInvoices(int enterpriseId)
+        {
+            var invoices = await _invoiceService.getAvailableEnterpriseInvoices(_context.Invoices, HttpContext.User, enterpriseId).ToListAsync();
+            if (invoices != null)
+            {
+                return invoices;
+            }
+
+            return new List<Invoice>();
         }
 
         // GET: api/Invoice/5
         [HttpGet("{id}")]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<Invoice>> GetInvoice(int id)
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(GetUsers)}:: RUNNING FUNCTION CALL");
-            var invoice = await _context.Invoices.FindAsync(id);
+            var invoice = await _invoiceService.getAvailableInvoice(_context.Invoices, HttpContext.User, id);
 
             if (invoice == null)
             {
@@ -57,12 +81,12 @@ namespace APIGestionFacturas.Controllers
         // PUT: api/Invoice/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<IActionResult> PutInvoice(int id, InvoiceEditable invoiceData)
         {
             // _logger.LogInformation($"{nameof(UsersController)} - {nameof(PutUser)}:: RUNNING FUNCTION CALL");
 
-            Invoice? invoice = await _context.Invoices.FindAsync(id);
+            Invoice? invoice = await _invoiceService.getAvailableInvoice(_context.Invoices, HttpContext.User, id);
 
             if (invoice == null)
             {
@@ -71,7 +95,8 @@ namespace APIGestionFacturas.Controllers
 
             try
             {
-                if (invoiceData.InvoiceLines != null) { invoice.InvoiceLines = invoiceData.InvoiceLines; }
+                if (invoiceData.EnterpriseId != null) { invoice.EnterpriseId = (int)invoiceData.EnterpriseId; }
+                if (invoiceData.TaxPercentage!= null) { invoice.TaxPercentage= (int)invoiceData.TaxPercentage; }
 
                 _context.Invoices.Update(invoice);
 
@@ -81,7 +106,7 @@ namespace APIGestionFacturas.Controllers
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                if (true)//!_enterpriseService.userExists(_context.Users, user))
+                if (_context.Invoices.Any(e => e.Id == id))
                 {
                     return NotFound();
                 }
@@ -93,35 +118,55 @@ namespace APIGestionFacturas.Controllers
                 }
             }
 
-            return CreatedAtAction("GetUser", new { id = invoice.Id }, invoice);
+            return CreatedAtAction("PutInvoice", new { id = invoice.Id }, invoice);
         }
 
         // POST: api/Invoice
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        [Authorize]
-        public async Task<ActionResult<Invoice>> PostInvoice(Invoice invoice)
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
+        public async Task<ActionResult<Invoice>> PostInvoice(InvoiceEditable invoiceData)
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(PostUser)}:: RUNNING FUNCTION CALL");
 
-            _context.Invoices.Add(invoice);
+            if(invoiceData.Name == null &&
+                invoiceData.EnterpriseId == null &&
+                invoiceData.TaxPercentage == null)
+            {
+                return BadRequest("Faltan datos para generar la entidad");
+            }
+
+            var invoice = new Invoice(invoiceData);
+
+            Enterprise? enterprise= await _context.Enterprises.FindAsync(invoiceData.EnterpriseId);
+            if (enterprise == null) { return BadRequest("Id de usuario no encontrado"); }
+            invoice.Enterprise = enterprise;
+
+            invoice.CreatedBy = HttpContext.User.Identity.Name;
+
+            invoice.Id = _context.Invoices.Add(invoice).Entity.Id;
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetUser", new { id = invoice.Id }, invoice);
+            return CreatedAtAction("PostInvoice", new { id = invoice.Id }, invoice);
         }
 
         // DELETE: api/Invoice/5
         [HttpDelete("{id}")]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<IActionResult> DeleteInvoice(int id)
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(DeleteUser)}:: RUNNING FUNCTION CALL");
 
-            var invoice = await _context.Invoices.FindAsync(id);
+            var invoice = await _invoiceService.getAvailableInvoice(_context.Invoices, HttpContext.User, id);
             if (invoice == null)
             {
                 return NotFound();
             }
+
+            invoice.DeletedBy = HttpContext.User.Identity.Name;
+            invoice.DeletedDate = DateTime.Now;
+            invoice.IsDeleted = true;
+
 
             _context.Invoices.Remove(invoice);
             await _context.SaveChangesAsync();

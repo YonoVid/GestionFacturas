@@ -51,13 +51,8 @@ namespace APIGestionFacturas.Controllers
         public async Task<ActionResult<Enterprise>> GetEnterprise(int id)
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(GetUsers)}:: RUNNING FUNCTION CALL");
-            if(!HttpContext.User.IsInRole("Administrator"))
-            {
 
-                
-            }
-
-            var enterprise = await _context.Enterprises.FindAsync(id);
+            var enterprise = await _enterpriseService.getAvailableEnterprise(_context.Enterprises, HttpContext.User, id);
 
             if (enterprise == null)
             {
@@ -70,7 +65,7 @@ namespace APIGestionFacturas.Controllers
         // PUT: api/Enterprise/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<IActionResult> PutEnterprise(int id, EnterpriseEditable enterpriseData)
         {
             // _logger.LogInformation($"{nameof(UsersController)} - {nameof(PutUser)}:: RUNNING FUNCTION CALL");
@@ -78,6 +73,11 @@ namespace APIGestionFacturas.Controllers
             Enterprise? enterprise= await _context.Enterprises.FindAsync(id);
 
             if (enterprise == null)
+            {
+                return NotFound();
+            }
+            else if (enterpriseData.Name == null &&
+                    enterpriseData.UserId == null)
             {
                 return BadRequest();
             }
@@ -87,6 +87,7 @@ namespace APIGestionFacturas.Controllers
                 if (enterpriseData.Name != null) { enterprise.Name = enterpriseData.Name; }
                 if (enterpriseData.UserId != null) { enterprise.UserId = enterpriseData.UserId; }
 
+
                 _context.Enterprises.Update(enterprise);
 
                 _context.Entry(enterprise).State = EntityState.Modified;
@@ -95,43 +96,33 @@ namespace APIGestionFacturas.Controllers
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                if (true)//!_enterpriseService.userExists(_context.Users, user))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    //_logger.LogWarning($"{nameof(UsersController)} - {nameof(PutUser)}:: UNEXPECTED BEHAVIOUR IN FUNCTION CALL");
-
-                    throw ex;
-                }
+                //_logger.LogWarning($"{nameof(UsersController)} - {nameof(PutUser)}:: UNEXPECTED BEHAVIOUR IN FUNCTION CALL");
+                throw ex;
             }
 
-            return CreatedAtAction("GetEnterprise", new { id = enterprise.Id }, enterprise);
+            return CreatedAtAction("PutEnterprise", new { id = enterprise.Id }, enterprise);
         }
 
         // POST: api/Enterprise
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<ActionResult<Enterprise>> PostEnterprise(EnterpriseEditable enterpriseData)
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(PostUser)}:: RUNNING FUNCTION CALL");
 
-            if(enterpriseData.Name == null) { return BadRequest(); }
-
-            if(enterpriseData.User != null)
-            {
-                _context.Users.Add(enterpriseData.User);
-            }
-            else if(enterpriseData.UserId != null)
-            {
-                enterpriseData.User = await _context.Users.FindAsync(enterpriseData.UserId);
-                if(enterpriseData.User == null) { return BadRequest("Id de usuario no encontrado"); }
-            }
+            if(enterpriseData.Name == null) 
+            { return BadRequest("Faltan datos para generar la entidad"); }
 
             var enterprise = new Enterprise(enterpriseData);
 
+            if (enterpriseData.UserId != null)
+            {
+                enterprise.User = await _context.Users.FindAsync(enterpriseData.UserId);
+                if (enterprise.User == null) { return BadRequest("Id de usuario no encontrado"); }
+            }
+
+            enterprise.CreatedBy = HttpContext.User.Identity.Name;
             _context.Enterprises.Add(enterprise);
             await _context.SaveChangesAsync();
 
@@ -140,7 +131,7 @@ namespace APIGestionFacturas.Controllers
 
         // DELETE: api/Enterprise/5
         [HttpDelete("{id}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<IActionResult> DeleteEnterprise(int id)
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(DeleteUser)}:: RUNNING FUNCTION CALL");
@@ -151,10 +142,15 @@ namespace APIGestionFacturas.Controllers
                 return NotFound();
             }
 
-            _context.Enterprises.Remove(enterprise);
+            enterprise.DeletedBy = HttpContext.User.Identity.Name;
+            enterprise.DeletedDate = DateTime.Now;
+            enterprise.IsDeleted = true;
+
+
+            _context.Enterprises.Update(enterprise);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok();
         }
     }
 }

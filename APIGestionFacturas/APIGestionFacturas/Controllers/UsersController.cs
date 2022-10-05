@@ -149,7 +149,11 @@ namespace APIGestionFacturas.Controllers
 
             User? user = await _context.Users.FindAsync(id);
 
-            if(user == null)
+            if(user == null ||
+                (userData.Name == null &&
+                userData.Password == null &&
+                userData.Email == null &&
+                userData.Rol == null))
             {
                 return BadRequest();
             }
@@ -190,9 +194,18 @@ namespace APIGestionFacturas.Controllers
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
-        public async Task<ActionResult<User>> PostUser(User user)
+        public async Task<ActionResult<User>> PostUser(UserEditable userData)
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(PostUser)}:: RUNNING FUNCTION CALL");
+
+            if(userData.Name == null ||
+                userData.Email == null ||
+                userData.Password == null ||
+                userData.Rol == null) 
+            { return BadRequest("Faltan datos para generar la entidad"); }
+
+            var user = new User(userData);
+            user.CreatedBy = HttpContext.User.Identity.Name;
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
@@ -213,7 +226,12 @@ namespace APIGestionFacturas.Controllers
                 return NotFound();
             }
 
-            _context.Users.Remove(user);
+            user.DeletedBy = HttpContext.User.Identity.Name;
+            user.DeletedDate = DateTime.Now;
+            user.IsDeleted = true;
+
+
+            _context.Users.Update(user);
             await _context.SaveChangesAsync();
 
             return NoContent();
