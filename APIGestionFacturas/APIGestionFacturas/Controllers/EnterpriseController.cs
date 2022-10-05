@@ -70,37 +70,36 @@ namespace APIGestionFacturas.Controllers
         {
             // _logger.LogInformation($"{nameof(UsersController)} - {nameof(PutUser)}:: RUNNING FUNCTION CALL");
 
-            Enterprise? enterprise= await _context.Enterprises.FindAsync(id);
 
-            if (enterprise == null)
-            {
-                return NotFound();
-            }
-            else if (enterpriseData.Name == null &&
-                    enterpriseData.UserId == null)
-            {
-                return BadRequest();
-            }
+            Enterprise editedEnterprise;
 
             try
             {
-                if (enterpriseData.Name != null) { enterprise.Name = enterpriseData.Name; }
-                if (enterpriseData.UserId != null) { enterprise.UserId = enterpriseData.UserId; }
-
-
-                _context.Enterprises.Update(enterprise);
-
-                _context.Entry(enterprise).State = EntityState.Modified;
-
-                await _context.SaveChangesAsync();
+                editedEnterprise = await _enterpriseService.editEnterprise(_context, HttpContext.User, enterpriseData, id);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                //_logger.LogWarning($"{nameof(UsersController)} - {nameof(PutUser)}:: UNEXPECTED BEHAVIOUR IN FUNCTION CALL");
-                throw ex;
+                if (_context.Invoices.Any(e => e.Id == id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    //_logger.LogWarning($"{nameof(UsersController)} - {nameof(PutUser)}:: UNEXPECTED BEHAVIOUR IN FUNCTION CALL");
+
+                    throw ex;
+                }
             }
 
-            return CreatedAtAction("PutEnterprise", new { id = enterprise.Id }, enterprise);
+            return CreatedAtAction("PutEnterprise", new { id = editedEnterprise.Id }, editedEnterprise);
         }
 
         // POST: api/Enterprise
@@ -111,22 +110,25 @@ namespace APIGestionFacturas.Controllers
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(PostUser)}:: RUNNING FUNCTION CALL");
 
+            Enterprise createdEnterprise;
+
             if(enterpriseData.Name == null) 
             { return BadRequest("Faltan datos para generar la entidad"); }
 
-            var enterprise = new Enterprise(enterpriseData);
-
-            if (enterpriseData.UserId != null)
+            try
             {
-                enterprise.User = await _context.Users.FindAsync(enterpriseData.UserId);
-                if (enterprise.User == null) { return BadRequest("Id de usuario no encontrado"); }
+                createdEnterprise = await _enterpriseService.createEnterprise(_context, HttpContext.User, enterpriseData);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                throw ex;
             }
 
-            enterprise.CreatedBy = HttpContext.User.Identity.Name;
-            _context.Enterprises.Add(enterprise);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("PostEnterprise", new { id = enterprise.Id }, enterprise);
+            return CreatedAtAction("PostEnterprise", new { id = createdEnterprise.Id }, createdEnterprise);
         }
 
         // DELETE: api/Enterprise/5
@@ -136,19 +138,16 @@ namespace APIGestionFacturas.Controllers
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(DeleteUser)}:: RUNNING FUNCTION CALL");
 
-            var enterprise = await _context.Enterprises.FindAsync(id);
-            if (enterprise == null)
+            Enterprise deletedEnterprise;
+
+            try
+            {
+                deletedEnterprise = await _enterpriseService.deleteEnterprise(_context, HttpContext.User, id);
+            }
+            catch (KeyNotFoundException ex)
             {
                 return NotFound();
             }
-
-            enterprise.DeletedBy = HttpContext.User.Identity.Name;
-            enterprise.DeletedDate = DateTime.Now;
-            enterprise.IsDeleted = true;
-
-
-            _context.Enterprises.Update(enterprise);
-            await _context.SaveChangesAsync();
 
             return Ok();
         }

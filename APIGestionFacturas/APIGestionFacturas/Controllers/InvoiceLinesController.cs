@@ -48,9 +48,9 @@ namespace APIGestionFacturas.Controllers
         [HttpGet]
         [Route("[action]/{id}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
-        public async Task<ActionResult<IEnumerable<InvoiceLine>>> GetInvoiceLines(int invoiceId)
+        public async Task<ActionResult<IEnumerable<InvoiceLine>>> GetInvoiceLines(int id)
         {
-            var invoiceLines = await _invoiceLineService.getAvailableInvoiceLines(_context.InvoiceLines, HttpContext.User, invoiceId).ToListAsync();
+            var invoiceLines = await _invoiceLineService.getAvailableInvoiceLines(_context.InvoiceLines, HttpContext.User, id).ToListAsync();
             if (invoiceLines != null)
             {
                 return invoiceLines;
@@ -83,27 +83,18 @@ namespace APIGestionFacturas.Controllers
         {
             // _logger.LogInformation($"{nameof(UsersController)} - {nameof(PutUser)}:: RUNNING FUNCTION CALL");
 
-            InvoiceLine? invoiceLine = await _invoiceLineService.getAvailableInvoiceLine(_context.InvoiceLines, HttpContext.User, id);
+            InvoiceLine editedInvoiceLine;
 
-            if (invoiceLine == null)
+            if(invoiceLineData.Item == null &&
+               invoiceLineData.Quantity == null &&
+               invoiceLineData.ItemValue == null)
             {
-                return BadRequest();
+                return BadRequest("Faltan datos para modificar la entidad");
             }
 
             try
             {
-                if (invoiceLineData.Item != null) { invoiceLine.Item = invoiceLineData.Item; }
-                if (invoiceLineData.Quantity != null) { invoiceLine.Quantity = (int)invoiceLineData.Quantity; }
-                if (invoiceLineData.ItemValue != null) { invoiceLine.ItemValue= (float)invoiceLineData.ItemValue; }
-
-                invoiceLine.UpdatedBy = HttpContext.User.Identity.Name;
-                invoiceLine.UpdatedDate = DateTime.Now;
-
-                _context.InvoiceLines.Update(invoiceLine);
-
-                _context.Entry(invoiceLine).State = EntityState.Modified;
-
-                await _context.SaveChangesAsync();
+                editedInvoiceLine = await _invoiceLineService.editInvoiceLine(_context, HttpContext.User, invoiceLineData, id);
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -119,7 +110,7 @@ namespace APIGestionFacturas.Controllers
                 }
             }
 
-            return CreatedAtAction("PutInvoiceLine", new { id = invoiceLine.Id }, invoiceLine);
+            return CreatedAtAction("PutInvoiceLine", new { id = editedInvoiceLine.Id }, editedInvoiceLine);
         }
 
         // POST: api/InvoiceLine
@@ -129,23 +120,31 @@ namespace APIGestionFacturas.Controllers
         public async Task<ActionResult<InvoiceLine>> PostInvoiceLine(InvoiceLineEditable invoiceLineData)
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(PostUser)}:: RUNNING FUNCTION CALL");
-            if (invoiceLineData.Item == null &&
-                invoiceLineData.Quantity == null &&
-                invoiceLineData.ItemValue == null)
+
+            InvoiceLine createdInvoiceLine;
+
+            if (invoiceLineData.Item == null ||
+                invoiceLineData.Quantity == null ||
+                invoiceLineData.ItemValue == null ||
+                invoiceLineData.InvoiceId == null)
             {
                 return BadRequest("Faltan datos para generar la entidad");
             }
 
-            var invoiceLine = new InvoiceLine(invoiceLineData);
+            try
+            {
+                createdInvoiceLine = await _invoiceLineService.createInvoiceLine(_context, HttpContext.User, invoiceLineData, (int)invoiceLineData.InvoiceId);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                throw ex;
+            }
 
-            if (invoiceLine == null) { return BadRequest("Id de usuario no encontrado"); }
-
-            invoiceLine.CreatedBy = HttpContext.User.Identity.Name;
-
-            _context.InvoiceLines.Add(invoiceLine);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("PostInvoiceLine", new { id = invoiceLine.Id }, invoiceLine);
+            return CreatedAtAction("PostInvoiceLine", new { id = createdInvoiceLine.Id }, createdInvoiceLine);
         }
 
         // DELETE: api/InvoiceLine/5
@@ -155,14 +154,17 @@ namespace APIGestionFacturas.Controllers
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(DeleteUser)}:: RUNNING FUNCTION CALL");
 
-            var invoiceLine = await _invoiceLineService.getAvailableInvoiceLine(_context.InvoiceLines, HttpContext.User, id);
-            if (invoiceLine == null)
+            InvoiceLine deletedInvoiceLine;
+
+            try
+            {
+                deletedInvoiceLine = await _invoiceLineService.deleteInvoiceLine(_context, HttpContext.User, id);
+            }
+            catch (KeyNotFoundException ex)
             {
                 return NotFound();
             }
 
-            _context.InvoiceLines.Remove(invoiceLine);
-            await _context.SaveChangesAsync();
 
             return NoContent();
         }

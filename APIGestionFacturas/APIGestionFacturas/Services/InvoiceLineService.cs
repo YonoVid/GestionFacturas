@@ -1,4 +1,6 @@
-﻿using GestionFacturasModelo.Model.DataModel;
+﻿using APIGestionFacturas.DataAccess;
+using GestionFacturasModelo.Model.DataModel;
+using GestionFacturasModelo.Model.Templates;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
@@ -59,6 +61,80 @@ namespace APIGestionFacturas.Services
                 return null;
             }
             return invoiceLines.Where((invoiceLine) => invoiceLine.Invoice.Id == InvoiceId);
+        }
+
+        public async Task<InvoiceLine> createInvoiceLine(GestionFacturasContext _context,
+                                                         ClaimsPrincipal userClaims,
+                                                         InvoiceLineEditable invoiceLineData,
+                                                         int invoiceId)
+        {
+            var invoiceLine = new InvoiceLine(invoiceLineData);
+
+            if (invoiceLine == null) { throw new KeyNotFoundException("Id de empresa no encontrado"); }
+
+            Invoice? invoice = await _context.Invoices.FindAsync(invoiceId);
+            if(invoice == null)
+            {
+                throw new KeyNotFoundException("Id de factura no encontrado");
+            }
+            invoiceLine.InvoiceId = invoiceId;
+            invoiceLine.Invoice = invoice;
+
+            invoiceLine.CreatedBy = userClaims.Identity.Name;
+
+            _context.InvoiceLines.Add(invoiceLine);
+            await _context.SaveChangesAsync();
+
+
+            return invoiceLine;
+        }
+
+
+        public async Task<InvoiceLine> editInvoiceLine(GestionFacturasContext _context,
+                                                       ClaimsPrincipal userClaims,
+                                                       InvoiceLineEditable invoiceLineData,
+                                                       int invoiceLineId)
+        {
+            InvoiceLine? invoiceLine = await getAvailableInvoiceLine(_context.InvoiceLines, userClaims, invoiceLineId);
+
+            if (invoiceLine == null)
+            {
+                throw new InvalidOperationException("No hay suficientes datos para modificar la entidad");
+            }
+
+            if (invoiceLineData.Item != null) { invoiceLine.Item = invoiceLineData.Item; }
+            if (invoiceLineData.Quantity != null) { invoiceLine.Quantity = (int)invoiceLineData.Quantity; }
+            if (invoiceLineData.ItemValue != null) { invoiceLine.ItemValue = (float)invoiceLineData.ItemValue; }
+
+            invoiceLine.UpdatedBy = userClaims.Identity.Name;
+            invoiceLine.UpdatedDate = DateTime.Now;
+
+            _context.InvoiceLines.Update(invoiceLine);
+
+            _context.Entry(invoiceLine).State = EntityState.Modified;
+
+            await _context.SaveChangesAsync();
+
+            return invoiceLine;
+        }
+        public async Task<InvoiceLine> deleteInvoiceLine(GestionFacturasContext _context,
+                                                         ClaimsPrincipal userClaims,
+                                                         int invoiceLineId)
+        {
+            var invoiceLine = await getAvailableInvoiceLine(_context.InvoiceLines, userClaims, invoiceLineId);
+            if (invoiceLine == null)
+            {
+                throw new KeyNotFoundException("Linea de factura no encontrada");
+            }
+
+            invoiceLine.DeletedBy = userClaims.Identity.Name;
+            invoiceLine.DeletedDate = DateTime.Now;
+            invoiceLine.IsDeleted = true;
+
+            _context.InvoiceLines.Update(invoiceLine);
+            await _context.SaveChangesAsync();
+
+            return invoiceLine;
         }
     }
 }
