@@ -91,23 +91,12 @@ namespace APIGestionFacturas.Controllers
         [HttpPost]
         [Route("[action]/{id}&{rol}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
-        public async Task<ActionResult<User>> ChangeRol(int id, UserRol rol)
+        public async Task<IActionResult> ChangeRol(int id, UserRol rol)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user != null)
-            {
-                user.Rol = rol;                                     //Se actualiza el rol
-                user.UpdatedBy = HttpContext.User.Identity.Name;    //Se indica el usuario que actualiza
-                user.UpdatedDate = DateTime.Now;                    //Se actualiza tiempo de último cambio
-                _context.Users.Update(user);                        //Se actualiza la información del usuario
-                _context.Entry(user).State = EntityState.Modified;
-                //Actualización asíncrona de la base de datos
-                await _context.SaveChangesAsync();
+            UserEditable userData = new UserEditable();
+            userData.Rol = rol;
 
-                return CreatedAtAction("GetUser", new { id = user.Id }, user);
-            }
-
-            return BadRequest("Usuario no encontrado");
+            return await PutUser(id, userData);
 
         }
 
@@ -145,37 +134,24 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<IActionResult> PutUser(int id, UserEditable userData)
         {
-           // _logger.LogInformation($"{nameof(UsersController)} - {nameof(PutUser)}:: RUNNING FUNCTION CALL");
+            // _logger.LogInformation($"{nameof(UsersController)} - {nameof(PutUser)}:: RUNNING FUNCTION CALL");
 
-            User? user = await _context.Users.FindAsync(id);
-
-            if(user == null ||
-                (userData.Name == null &&
-                userData.Password == null &&
-                userData.Email == null &&
-                userData.Rol == null))
-            {
-                return BadRequest();
-            }
-
+            User userEdited;
             try
             {
-                //Se actualiza cada propiedad del usuario si se ha incluido en los datos recibidos
-                if (userData.Name != null) { user.Name = userData.Name; }
-                if (userData.Password != null) { user.Password = userData.Password; }
-                if (userData.Email != null) { user.Email= userData.Email; }
-                if (userData.Rol != null) { user.Rol = (UserRol)userData.Rol; }
-
-                //Se actualizan la base de datos con los cambios
-                _context.Users.Update(user);
-
-                _context.Entry(user).State = EntityState.Modified;
-
-                await _context.SaveChangesAsync();  //Se guardan los cambios de manera asíncrona
+                userEdited = await _userService.editUser(_context, HttpContext.User, userData, id);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                if (!_userService.userExists(_context.Users, user))
+                if (!_userService.userExists(_context.Users, new User(userData)))
                 {
                     return NotFound();
                 }
@@ -187,7 +163,7 @@ namespace APIGestionFacturas.Controllers
                 }
             }
 
-            return CreatedAtAction("GetUser", new { id = user.Id }, user);
+            return CreatedAtAction("PutUser", new { id = userEdited.Id }, userEdited);
         }
 
         // POST: api/Users
@@ -197,20 +173,23 @@ namespace APIGestionFacturas.Controllers
         public async Task<ActionResult<User>> PostUser(UserEditable userData)
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(PostUser)}:: RUNNING FUNCTION CALL");
-
+            User userCreated;
             if(userData.Name == null ||
                 userData.Email == null ||
                 userData.Password == null ||
                 userData.Rol == null) 
             { return BadRequest("Faltan datos para generar la entidad"); }
 
-            var user = new User(userData);
-            user.CreatedBy = HttpContext.User.Identity.Name;
+            try
+            {
+                userCreated = await _userService.createUser(_context, HttpContext.User, userData);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                throw ex;
+            }
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetUser", new { id = user.Id }, user);
+            return CreatedAtAction("PostUser", new { id = userCreated.Id }, userCreated);
         }
 
         // DELETE: api/Users/5
@@ -220,19 +199,15 @@ namespace APIGestionFacturas.Controllers
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(DeleteUser)}:: RUNNING FUNCTION CALL");
 
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
+            User deletedUser;
+            try
+            {
+                deletedUser= await _userService.deleteUser(_context, HttpContext.User, id);
+            }
+            catch (KeyNotFoundException ex)
             {
                 return NotFound();
             }
-
-            user.DeletedBy = HttpContext.User.Identity.Name;
-            user.DeletedDate = DateTime.Now;
-            user.IsDeleted = true;
-
-
-            _context.Users.Update(user);
-            await _context.SaveChangesAsync();
 
             return NoContent();
         }

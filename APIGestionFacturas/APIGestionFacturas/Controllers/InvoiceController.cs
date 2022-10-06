@@ -124,7 +124,7 @@ namespace APIGestionFacturas.Controllers
             }
             catch (KeyNotFoundException ex)
             {
-                return NotFound();
+                return NotFound(ex.Message);
             }
             catch(InvalidOperationException ex)
             {
