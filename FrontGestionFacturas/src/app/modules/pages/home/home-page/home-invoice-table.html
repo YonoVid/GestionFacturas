@@ -1,0 +1,34 @@
+<h1 mat-dialog-title>{{data.invoice.name}}</h1>
+<div mat-dialog-content>
+  <table>
+    <thead>
+      <th>°</th>
+      <th>Nombre</th>
+      <th>Cantidad</th>
+      <th>Valor</th>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of data.invoiceLines; let i = index">
+        <td>{{i}}</td>
+        <td>{{item.item}}</td>
+        <td>{{item.quantity}}</td>
+        <td>{{item.itemValue | currency}}</td>
+      </tr>
+      <tr>
+        <td colspan="2"></td>
+        <td>Subtotal</td>
+        <td>{{data.total}}</td>
+      </tr>
+      <tr>
+        <td colspan="2"></td>
+        <td>Tax {{data.invoice.taxPercentage}}%</td>
+        <td>{{data.total * data.invoice.taxPercentage/100 | currency}}</td>
+      </tr>
+      <tr>
+        <td colspan="2"></td>
+        <td>TOTAL</td>
+        <td>{{data.total * (1 + data.invoice.taxPercentage/100) | currency}}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

@@ -8,7 +8,7 @@ namespace APIGestionFacturas.Services
 {
     public class InvoiceService : IInvoiceService
     {
-        public IQueryable<Invoice> getAvailableInvoices(IQueryable<Invoice> invoices, ClaimsPrincipal userClaims)
+        public IQueryable<Invoice>? getAvailableInvoices(IQueryable<Invoice> invoices, ClaimsPrincipal userClaims)
         {
             if (!userClaims.IsInRole("Administrator"))
             {
@@ -23,9 +23,9 @@ namespace APIGestionFacturas.Services
             }
             return invoices;
         }
-        public async Task<Invoice> getAvailableInvoice(DbSet<Invoice> invoices, ClaimsPrincipal userClaims, int id)
+        public async Task<Invoice?> getAvailableInvoice(DbSet<Invoice> invoices, ClaimsPrincipal userClaims, int id)
         {
-            Invoice result = await invoices.FindAsync(id);
+            Invoice? result = await invoices.FindAsync(id);
 
             if (!userClaims.IsInRole("Administrator") && result != null)
             {

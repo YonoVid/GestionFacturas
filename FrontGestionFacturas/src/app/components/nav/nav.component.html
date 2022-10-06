@@ -1,5 +1,5 @@
 <mat-sidenav-container class="sidenav-container">
-  <mat-sidenav #drawer class="sidenav" fixedInViewport
+  <mat-sidenav #drawer [class.is-hidden]="token == null" class="sidenav" fixedInViewport
       [attr.role]="(isHandset$ | async) ? 'dialog' : 'navigation'"
       [mode]="(isHandset$ | async) ? 'over' : 'side'"
       [opened]="(isHandset$ | async) === false">
@@ -21,7 +21,9 @@
       </button>
       <span>FrontGestionFacturas</span>
     </mat-toolbar>
-    <!-- Add Content Here --><
-    <router-outlet></router-outlet>
+    <!-- Add Content Here -->
+    <div class="router-content">
+      <router-outlet></router-outlet>
+    </div>
   </mat-sidenav-content>
 </mat-sidenav-container>

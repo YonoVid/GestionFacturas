@@ -8,9 +8,9 @@ namespace APIGestionFacturas.Services
 {
     public interface IInvoiceService
     {
-        IQueryable<Invoice> getAvailableInvoices(IQueryable<Invoice> invoices,
+        IQueryable<Invoice>? getAvailableInvoices(IQueryable<Invoice> invoices,
                                                  ClaimsPrincipal userClaims);
-        Task<Invoice> getAvailableInvoice(DbSet<Invoice> invoices,
+        Task<Invoice?> getAvailableInvoice(DbSet<Invoice> invoices,
                                           ClaimsPrincipal userClaims,
                                           int id);
         IQueryable<Invoice> getAvailableEnterpriseInvoices(IQueryable<Invoice> invoices,

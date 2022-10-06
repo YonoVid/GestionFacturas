@@ -13,13 +13,13 @@ namespace APIGestionFacturas.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class InvoiceLinesController : ControllerBase
+    public class InvoiceLineController : ControllerBase
     {
         private readonly GestionFacturasContext _context;
         private readonly IInvoiceLineService _invoiceLineService;
         private readonly JwtSettings _jwtSettings;
 
-        public InvoiceLinesController(GestionFacturasContext context,
+        public InvoiceLineController(GestionFacturasContext context,
                             IInvoiceLineService invoiceLinesService,
                             JwtSettings jwtSettings)
         {
