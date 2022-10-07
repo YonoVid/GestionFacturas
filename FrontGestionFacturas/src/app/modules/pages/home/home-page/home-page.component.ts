@@ -1,11 +1,15 @@
 import { Component, Inject, OnInit } from '@angular/core';
-import { MatTableDataSource } from '@angular/material/table';
+import { Sort } from '@angular/material/sort';
 import { IEnterprise } from 'src/app/models/interfaces/enterprise.interface';
 import { IInvoice } from 'src/app/models/interfaces/invoice.interface';
 import { IInvoiceLine } from 'src/app/models/interfaces/invoiceLine.interface';
 import { InvoiceService } from 'src/app/services/invoice.service';
 
-import {MatDialog, MAT_DIALOG_DATA} from '@angular/material/dialog';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSelectChange } from '@angular/material/select';
+import { IFilter, ITableFilter } from 'src/app/models/table/table-filter';
+import { InvoiceTableComponent } from '../invoice-table/invoice-table.component';
 
 @Component({
   selector: 'app-home-page',
@@ -14,11 +18,16 @@ import {MatDialog, MAT_DIALOG_DATA} from '@angular/material/dialog';
 })
 export class HomePageComponent implements OnInit {
 
-  displayedColumns: string[] = ['home-id', 'home-name', 'home-enterprise', 'home-date', 'home-edit'];
+  displayedColumns: string[] = ['id', 'name',
+                                'home-enterprise', 'createdDate',
+                                'totalAmount', 'home-edit'];
   dataSource: MatTableDataSource<IInvoice> = new MatTableDataSource<IInvoice>();
 
   invoices: { [id: number]: IInvoice;} = [];
   enterprises: { [id: number]: IEnterprise;} = [];
+
+
+  filters = new Map<string, string>();
 
   loadingData: boolean = true;
   
@@ -38,7 +47,7 @@ export class HomePageComponent implements OnInit {
         let total = 0;
         response.forEach((line) => total += line.quantity * line.itemValue);
 
-        this.dialog.open(HomeInvoiceTable, {
+        this.dialog.open(InvoiceTableComponent, {
           data:
           {
             invoice: invoice,
@@ -54,6 +63,48 @@ export class HomePageComponent implements OnInit {
       complete: () => console.info('Datos de tabla recopilados')
     })
     
+  }
+
+  sortData(sort: Sort)
+  {
+    const data = Object.values(this.invoices);
+    if (!sort.active || sort.direction === '') {
+      this.dataSource.data = data;
+      return;
+    }
+
+    this.dataSource.data = data.sort((a, b) => {
+      const isAsc = sort.direction === 'asc';
+      switch (sort.active) {
+        case 'id':
+          return this.compare(a.id, b.id, isAsc);
+        case 'name':
+          return this.compare(a.name, b.name, isAsc);
+        case 'enterpriseId':
+          return this.compare(this.getEnterpriseName(a.enterpriseId),
+                              this.getEnterpriseName(b.enterpriseId),
+                              isAsc);
+        case 'totalAmount':
+          return this.compare(a.totalAmount, b.totalAmount, isAsc);
+        default:
+          return 0;
+      }
+    });
+  }
+
+  compare(a: number | string | Date, b: number | string |Date, isAsc: boolean) {
+    return (a < b ? -1 : 1) * (isAsc ? 1 : -1);
+  }
+
+  applyFilter(ob:MatSelectChange, filter: IFilter) {
+
+    this.filters.set(filter.name,ob.value);
+
+
+    var jsonString = JSON.stringify(Array.from(this.filters.entries()));
+    
+    this.dataSource.filter = jsonString;
+    //console.log(this.filterValues);
   }
 
   getEnterpriseName(id: number): string
@@ -101,20 +152,4 @@ export class HomePageComponent implements OnInit {
     });
   }
 
-}
-
-interface IInvoiceData
-{
-  invoice: IInvoice,
-  enterprise: IEnterprise,
-  invoiceLines: IInvoiceLine[],
-  total: number
-}
-
-@Component({
-  selector: 'home-invoice-table',
-  templateUrl: 'home-invoice-table.html',
-})
-export class HomeInvoiceTable {
-  constructor(@Inject(MAT_DIALOG_DATA) public data: IInvoiceData) {}
 }
