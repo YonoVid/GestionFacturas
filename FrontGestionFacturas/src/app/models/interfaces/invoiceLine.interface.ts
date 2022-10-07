@@ -5,5 +5,4 @@ export interface IInvoiceLine
     quantity: number,
     itemValue: number,
     invoiceId: number,
-    isEdit: boolean
 }

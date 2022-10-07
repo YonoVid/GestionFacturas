@@ -54,8 +54,7 @@ export class InvoiceTableComponent implements OnInit {
       item: this.formItem?.value,
       quantity: this.formQuantity?.value,
       itemValue: this.formItemValue?.value,
-      invoiceId: this.data.invoice.id,
-      isEdit: false
+      invoiceId: this.data.invoice.id
     }
 
     console.log("CREATING NEW ROW");
@@ -78,8 +77,7 @@ export class InvoiceTableComponent implements OnInit {
       item: row.item,
       quantity: row.quantity,
       itemValue: row.itemValue,
-      invoiceId: row.invoiceId,
-      isEdit: false
+      invoiceId: row.invoiceId
     };
     console.info(`EDITING:: ${row.id} ${row.item}`);
   }
@@ -126,7 +124,14 @@ export class InvoiceTableComponent implements OnInit {
       error: (error)=> console.error(error),
       complete: ()=> console.info(`DELETE:: ${row.id} ${row.item}`)
     })
-    
+  }
+  
+  getClass(key: string)
+  {
+    if(key === 'quantity') return 'small-input';
+    if(key === 'itemValue') return 'medium-input';
+
+    return '';
   }
 
 }

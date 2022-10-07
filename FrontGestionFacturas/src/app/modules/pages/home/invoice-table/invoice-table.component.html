@@ -35,8 +35,7 @@
                 </div>
                 <!-- De no ser así,  se muestran campos editables -->
                 <div *ngIf="element.isEdit">
-                    <mat-form-field>
-                        <mat-label>{{col.label}}</mat-label>
+                    <mat-form-field [class]="getClass(col.key)">
                         <input [type]="col.type" matInput [(ngModel)]="element[col.key]" />
                     </mat-form-field>
                 </div>

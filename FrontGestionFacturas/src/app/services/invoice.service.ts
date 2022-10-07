@@ -37,12 +37,12 @@ export class InvoiceService {
 
   createInvoiceLine(invoiceLine: IInvoiceLine): Observable<any>
   {
-    return this.http.post('/api/InvoiceLine/' + invoiceLine.invoiceId, this.generateOptions());
+    return this.http.post('/api/InvoiceLine/', invoiceLine, this.generateOptions());
   }
 
   updateInvoiceLine(invoiceLine: IInvoiceLine): Observable<any>
   {
-    return this.http.put('/api/InvoiceLine/' + invoiceLine.id, this.generateOptions());
+    return this.http.put('/api/InvoiceLine/' + invoiceLine.id, invoiceLine, this.generateOptions());
   }
 
   deleteInvoiceLine(invoiceLine: IInvoiceLine): Observable<any>

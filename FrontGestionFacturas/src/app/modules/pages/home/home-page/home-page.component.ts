@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { Sort } from '@angular/material/sort';
 import { IEnterprise } from 'src/app/models/interfaces/enterprise.interface';
 import { IInvoice } from 'src/app/models/interfaces/invoice.interface';
@@ -7,9 +7,11 @@ import { InvoiceService } from 'src/app/services/invoice.service';
 
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
-import { MatSelectChange } from '@angular/material/select';
 import { IFilter, ITableFilter } from 'src/app/models/table/table-filter';
 import { InvoiceTableComponent } from '../invoice-table/invoice-table.component';
+import { MatPaginator } from '@angular/material/paginator';
+import { IInvoiceTableData } from 'src/app/models/interfaces/invoice-table-data.interface';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-home-page',
@@ -21,21 +23,29 @@ export class HomePageComponent implements OnInit {
   displayedColumns: string[] = ['id', 'name',
                                 'home-enterprise', 'createdDate',
                                 'totalAmount', 'home-edit'];
-  dataSource: MatTableDataSource<IInvoice> = new MatTableDataSource<IInvoice>();
+  dataSource: MatTableDataSource<IInvoiceTableData> = new MatTableDataSource<IInvoiceTableData>();
 
   invoices: { [id: number]: IInvoice;} = [];
+  invoicesData: IInvoiceTableData[] = [];
   enterprises: { [id: number]: IEnterprise;} = [];
-
-
-  filters = new Map<string, string>();
 
   loadingData: boolean = true;
   
+  @ViewChild(MatPaginator) paginator: MatPaginator | null = null;
+  
   constructor(private invoiceService: InvoiceService,
-              public dialog: MatDialog) { }
+              public dialog: MatDialog,
+              private datePipe: DatePipe) { }
 
   ngOnInit(): void {
     this.getInvoiceData();
+  }
+
+  ngAfterViewInit() {
+    if(this.paginator != null)
+    {  
+      this.dataSource.paginator = this.paginator;
+    }
   }
 
   openInvoiceTable(invoiceId: number) {
@@ -67,7 +77,7 @@ export class HomePageComponent implements OnInit {
 
   sortData(sort: Sort)
   {
-    const data = Object.values(this.invoices);
+    const data = this.invoicesData;
     if (!sort.active || sort.direction === '') {
       this.dataSource.data = data;
       return;
@@ -81,9 +91,7 @@ export class HomePageComponent implements OnInit {
         case 'name':
           return this.compare(a.name, b.name, isAsc);
         case 'enterpriseId':
-          return this.compare(this.getEnterpriseName(a.enterpriseId),
-                              this.getEnterpriseName(b.enterpriseId),
-                              isAsc);
+          return this.compare(a.enterprise, b.enterprise, isAsc);
         case 'totalAmount':
           return this.compare(a.totalAmount, b.totalAmount, isAsc);
         default:
@@ -94,17 +102,6 @@ export class HomePageComponent implements OnInit {
 
   compare(a: number | string | Date, b: number | string |Date, isAsc: boolean) {
     return (a < b ? -1 : 1) * (isAsc ? 1 : -1);
-  }
-
-  applyFilter(ob:MatSelectChange, filter: IFilter) {
-
-    this.filters.set(filter.name,ob.value);
-
-
-    var jsonString = JSON.stringify(Array.from(this.filters.entries()));
-    
-    this.dataSource.filter = jsonString;
-    //console.log(this.filterValues);
   }
 
   getEnterpriseName(id: number): string
@@ -121,6 +118,7 @@ export class HomePageComponent implements OnInit {
     this.loadingData = true;
     this.enterprises = [];
     this.invoices = [];
+    this.invoicesData = [];
 
     this.invoiceService.getEnterprises().subscribe({
       next: (response: IEnterprise[]) => {
@@ -131,13 +129,23 @@ export class HomePageComponent implements OnInit {
         this.invoiceService.getInvoices().subscribe({
           next: (response: IInvoice[]) => {
             response.forEach((invoice) => this.invoices[invoice.id] = invoice);
+            Object.values(this.invoices).forEach((invoice) =>
+              this.invoicesData.push({
+                id: invoice.id,
+                name: invoice.name,
+                taxPercentage: invoice.taxPercentage,
+                totalAmount: invoice.totalAmount,
+                enterprise: this.getEnterpriseName(invoice.enterpriseId),
+                createdDate: this.datePipe.transform(invoice.createdDate)!
+              })
+             );
             console.table(response);
 
           },
           error: (error) => console.log(error),
           complete: () => 
           {
-            this.dataSource.data = Object.values(this.invoices);
+            this.dataSource.data = this.invoicesData;
             this.loadingData = false;
             console.log("Obtener Facturas desde API:: Finalizado")
           }
