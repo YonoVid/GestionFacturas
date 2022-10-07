@@ -71,8 +71,10 @@ namespace APIGestionFacturas.Controllers
 
         [HttpPost]
         [Route("[action]")]
-        public async Task<ActionResult<User>> Register(User user)
+        public async Task<ActionResult<User>> Register(UserAuthorization userData)
         {
+            User user = new User(userData);
+
             if(!_userService.userExists(_context.Users, user))
             {
                 user.CreatedBy = "Admin";

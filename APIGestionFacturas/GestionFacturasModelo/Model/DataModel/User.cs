@@ -18,6 +18,13 @@ namespace GestionFacturasModelo.Model.DataModel
             Rol = (UserRol)data.Rol;
         }
 
+        public User(UserAuthorization data)
+        {
+            Name = data.Name;
+            Email = data.Email;
+            Password = data.Password;
+        }
+
         [Required, StringLength(20)]
         public string Name { get; set; } = string.Empty;
         [Required, StringLength(50)]

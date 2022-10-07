@@ -57,7 +57,10 @@ export class InvoiceService {
     let token = sessionStorage.getItem('token');
     return {
       headers: new HttpHeaders({
-        'Authorization':  'Bearer ' + token
+        'Authorization':  'Bearer ' + token,
+        'Access-Control-Allow-Origin':  '*',
+        'Access-Control-Allow-Methods': '*',
+        'Access-Control-Allow-Headers': '*'
       })
     }
   }

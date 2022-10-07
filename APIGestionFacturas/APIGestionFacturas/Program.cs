@@ -72,12 +72,8 @@ builder.Services.AddSwaggerGen(options =>
 
 // Habilitar CORS
 builder.Services.AddCors(options => 
-    options.AddPolicy(name: "CorsPolicy", builder =>
-    {
-        builder.AllowAnyHeader();
-        builder.AllowAnyMethod();
-        builder.AllowAnyHeader();
-    }
+    options.AddPolicy(name: "CorsPolicy", policy =>
+        policy.AllowAnyMethod().AllowAnyMethod().AllowAnyHeader()
 ));
 
 
