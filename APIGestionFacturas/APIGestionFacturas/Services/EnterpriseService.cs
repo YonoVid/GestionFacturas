@@ -109,9 +109,6 @@ namespace APIGestionFacturas.Services
             {
                 foreach (InvoiceLine invoiceLine in _context.InvoiceLines.Where((InvoiceLine row) => row.InvoiceId == invoice.Id))
                 {
-                    invoiceLine.DeletedBy = userClaims.Identity.Name;
-                    invoiceLine.DeletedDate = DateTime.Now;
-                    invoiceLine.IsDeleted = true;
                     _context.InvoiceLines.Update(invoiceLine);
                 }
                 invoice.DeletedBy = userClaims.Identity.Name;

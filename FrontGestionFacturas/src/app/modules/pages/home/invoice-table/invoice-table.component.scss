@@ -1,0 +1,33 @@
+:host{
+    margin: auto;
+}
+
+.invoice-table
+{
+    width: 100%;
+    height: 100%;
+}
+
+mat-form-field
+{
+    margin-right: 1em;
+}
+
+::ng-deep .mat-form-field-wrapper{
+    margin-bottom: -1.25em;
+ }
+
+mat-card
+{
+    padding:0.5em;
+}
+
+.small-input
+{
+    max-width: 15%;
+}
+
+.medium-input
+{
+    max-width: 20%;
+}

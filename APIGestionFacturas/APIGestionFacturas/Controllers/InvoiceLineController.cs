@@ -166,7 +166,7 @@ namespace APIGestionFacturas.Controllers
             }
 
 
-            return NoContent();
+            return Ok();
         }
     }
 }

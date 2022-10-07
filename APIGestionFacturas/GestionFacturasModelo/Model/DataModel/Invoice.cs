@@ -17,7 +17,9 @@ namespace GestionFacturasModelo.Model.DataModel
         [Required]
         public string Name { get; set; } = String.Empty;
         [Required]
-        public int TaxPercentage { get; set; } = 20;
+        public float TaxPercentage { get; set; } = 20;
+
+        public float TotalAmount { get; set; } = 0;
 
         [Required]
         public Enterprise Enterprise { get; set; } = new Enterprise();

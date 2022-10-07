@@ -15,8 +15,8 @@ namespace APIGestionFacturas.Services
                 var identity = userClaims.Identity as ClaimsIdentity;
                 if (identity != null)
                 {
-                    var id = identity.FindFirst("Id").Value;
-                    return invoiceLines.Where((invoiceLine) => invoiceLine.Id.ToString() == id && !invoiceLine.IsDeleted);
+                    int tokenId = int.Parse(identity.FindFirst("Id").Value);
+                    return invoiceLines.Where((invoiceLine) => invoiceLine.Invoice.Enterprise.UserId == tokenId);
 
                 }
                 return null;
@@ -33,7 +33,7 @@ namespace APIGestionFacturas.Services
 
                 int idToken = int.Parse(identity.FindFirst("Id").Value);
 
-                if (result.Id != idToken)
+                if (result.Invoice.Enterprise.UserId != idToken)
                 {
                     return null;
                 }
@@ -47,8 +47,7 @@ namespace APIGestionFacturas.Services
         {
             if (!userClaims.IsInRole("Administrator"))
             {
-                var filteredInvoiceLines = invoiceLines.Where((invoiceLine) => invoiceLine.Invoice.Id == InvoiceId &&
-                                                                            !invoiceLine.IsDeleted);
+                var filteredInvoiceLines = invoiceLines.Where((invoiceLine) => invoiceLine.Invoice.Id == InvoiceId);
                 var identity = userClaims.Identity as ClaimsIdentity;
                 if (identity != null)
                 {
@@ -77,12 +76,19 @@ namespace APIGestionFacturas.Services
             {
                 throw new KeyNotFoundException("Id de factura no encontrado");
             }
+
+            invoice.UpdatedBy = userClaims.Identity.Name;
+            invoice.UpdatedDate = DateTime.Now;
+            _context.Invoices.Update(invoice);
+
+
             invoiceLine.InvoiceId = invoiceId;
             invoiceLine.Invoice = invoice;
-
-            invoiceLine.CreatedBy = userClaims.Identity.Name;
-
             _context.InvoiceLines.Add(invoiceLine);
+
+            invoice.TotalAmount += (1 + invoice.TaxPercentage / 100) * (invoiceLine.ItemValue * invoiceLine.Quantity);
+            _context.Invoices.Update(invoice);
+
             await _context.SaveChangesAsync();
 
 
@@ -103,11 +109,26 @@ namespace APIGestionFacturas.Services
             }
 
             if (invoiceLineData.Item != null) { invoiceLine.Item = invoiceLineData.Item; }
-            if (invoiceLineData.Quantity != null) { invoiceLine.Quantity = (int)invoiceLineData.Quantity; }
-            if (invoiceLineData.ItemValue != null) { invoiceLine.ItemValue = (float)invoiceLineData.ItemValue; }
+            if (invoiceLineData.ItemValue != null || invoiceLineData.Quantity != null)
+            {
+                Invoice? invoice = await _context.Invoices.FindAsync(invoiceLine.InvoiceId);
 
-            invoiceLine.UpdatedBy = userClaims.Identity.Name;
-            invoiceLine.UpdatedDate = DateTime.Now;
+                var oldValue = invoiceLine.Quantity * invoiceLine.ItemValue;
+
+                if (invoiceLineData.Quantity != null) { invoiceLine.Quantity = (int)invoiceLineData.Quantity; }
+                if (invoiceLineData.ItemValue != null) { invoiceLine.ItemValue = (float)invoiceLineData.ItemValue; }
+
+                if(invoice != null)
+                {
+                    invoice.TotalAmount -= (1 + invoice.TaxPercentage / 100) * oldValue;
+                    invoice.TotalAmount += (1 + invoice.TaxPercentage / 100) * invoiceLine.Quantity * invoiceLine.ItemValue;
+
+                    invoice.UpdatedBy = userClaims.Identity.Name;
+                    invoice.UpdatedDate = DateTime.Now;
+                    _context.Invoices.Update(invoice);
+                }
+
+            }
 
             _context.InvoiceLines.Update(invoiceLine);
 
@@ -127,11 +148,18 @@ namespace APIGestionFacturas.Services
                 throw new KeyNotFoundException("Linea de factura no encontrada");
             }
 
-            invoiceLine.DeletedBy = userClaims.Identity.Name;
-            invoiceLine.DeletedDate = DateTime.Now;
-            invoiceLine.IsDeleted = true;
+            Invoice? invoice = await _context.Invoices.FindAsync(invoiceLine.InvoiceId);
 
-            _context.InvoiceLines.Update(invoiceLine);
+            if(invoice != null)
+            {
+                invoice.TotalAmount -= (1 + invoice.TaxPercentage / 100) * invoiceLine.Quantity * invoiceLine.ItemValue;
+
+                invoice.UpdatedBy = userClaims.Identity.Name;
+                invoice.UpdatedDate = DateTime.Now;
+                _context.Invoices.Update(invoice);
+            }
+
+            _context.InvoiceLines.Remove(invoiceLine);
             await _context.SaveChangesAsync();
 
             return invoiceLine;

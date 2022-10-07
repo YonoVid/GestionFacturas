@@ -6,6 +6,7 @@ export interface IInvoice extends IBaseEntity
 {
     name : string,
     taxPercentage: number,
+    totalAmount: number,
     invoiceLines: IInvoiceLine[],
 
     enterprise: IEnterprise,

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GestionFacturasModelo.Model.DataModel
 {
-    public class InvoiceLine: BaseEntity
+    public class InvoiceLine
     {
         public InvoiceLine() { }
         public InvoiceLine(InvoiceLineEditable data)
@@ -13,6 +13,11 @@ namespace GestionFacturasModelo.Model.DataModel
             Quantity = (int)data.Quantity;
             ItemValue = (float)data.ItemValue;
         }
+
+        [Required]
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
 
         [Required, StringLength(50)]
         public string Item { get; set; } = string.Empty;

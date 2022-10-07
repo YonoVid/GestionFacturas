@@ -9,7 +9,6 @@ namespace GestionFacturasModelo.Model.DataModel
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-        //public int UserId { get; set; }
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime CreatedDate { get; set; } = DateTime.Now;
         public string? UpdatedBy { get; set; } = string.Empty;

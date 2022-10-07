@@ -151,6 +151,92 @@ GO
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+GO
+
+DECLARE @var2 sysname;
+SELECT @var2 = [d].[name]
+FROM [sys].[default_constraints] [d]
+INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+WHERE ([d].[parent_object_id] = OBJECT_ID(N'[InvoiceLines]') AND [c].[name] = N'CreatedBy');
+IF @var2 IS NOT NULL EXEC(N'ALTER TABLE [InvoiceLines] DROP CONSTRAINT [' + @var2 + '];');
+ALTER TABLE [InvoiceLines] DROP COLUMN [CreatedBy];
+GO
+
+DECLARE @var3 sysname;
+SELECT @var3 = [d].[name]
+FROM [sys].[default_constraints] [d]
+INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+WHERE ([d].[parent_object_id] = OBJECT_ID(N'[InvoiceLines]') AND [c].[name] = N'CreatedDate');
+IF @var3 IS NOT NULL EXEC(N'ALTER TABLE [InvoiceLines] DROP CONSTRAINT [' + @var3 + '];');
+ALTER TABLE [InvoiceLines] DROP COLUMN [CreatedDate];
+GO
+
+DECLARE @var4 sysname;
+SELECT @var4 = [d].[name]
+FROM [sys].[default_constraints] [d]
+INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+WHERE ([d].[parent_object_id] = OBJECT_ID(N'[InvoiceLines]') AND [c].[name] = N'DeletedBy');
+IF @var4 IS NOT NULL EXEC(N'ALTER TABLE [InvoiceLines] DROP CONSTRAINT [' + @var4 + '];');
+ALTER TABLE [InvoiceLines] DROP COLUMN [DeletedBy];
+GO
+
+DECLARE @var5 sysname;
+SELECT @var5 = [d].[name]
+FROM [sys].[default_constraints] [d]
+INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+WHERE ([d].[parent_object_id] = OBJECT_ID(N'[InvoiceLines]') AND [c].[name] = N'DeletedDate');
+IF @var5 IS NOT NULL EXEC(N'ALTER TABLE [InvoiceLines] DROP CONSTRAINT [' + @var5 + '];');
+ALTER TABLE [InvoiceLines] DROP COLUMN [DeletedDate];
+GO
+
+DECLARE @var6 sysname;
+SELECT @var6 = [d].[name]
+FROM [sys].[default_constraints] [d]
+INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+WHERE ([d].[parent_object_id] = OBJECT_ID(N'[InvoiceLines]') AND [c].[name] = N'IsDeleted');
+IF @var6 IS NOT NULL EXEC(N'ALTER TABLE [InvoiceLines] DROP CONSTRAINT [' + @var6 + '];');
+ALTER TABLE [InvoiceLines] DROP COLUMN [IsDeleted];
+GO
+
+DECLARE @var7 sysname;
+SELECT @var7 = [d].[name]
+FROM [sys].[default_constraints] [d]
+INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+WHERE ([d].[parent_object_id] = OBJECT_ID(N'[InvoiceLines]') AND [c].[name] = N'UpdatedBy');
+IF @var7 IS NOT NULL EXEC(N'ALTER TABLE [InvoiceLines] DROP CONSTRAINT [' + @var7 + '];');
+ALTER TABLE [InvoiceLines] DROP COLUMN [UpdatedBy];
+GO
+
+DECLARE @var8 sysname;
+SELECT @var8 = [d].[name]
+FROM [sys].[default_constraints] [d]
+INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+WHERE ([d].[parent_object_id] = OBJECT_ID(N'[InvoiceLines]') AND [c].[name] = N'UpdatedDate');
+IF @var8 IS NOT NULL EXEC(N'ALTER TABLE [InvoiceLines] DROP CONSTRAINT [' + @var8 + '];');
+ALTER TABLE [InvoiceLines] DROP COLUMN [UpdatedDate];
+GO
+
+DECLARE @var9 sysname;
+SELECT @var9 = [d].[name]
+FROM [sys].[default_constraints] [d]
+INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Invoices]') AND [c].[name] = N'TaxPercentage');
+IF @var9 IS NOT NULL EXEC(N'ALTER TABLE [Invoices] DROP CONSTRAINT [' + @var9 + '];');
+ALTER TABLE [Invoices] ALTER COLUMN [TaxPercentage] real NOT NULL;
+GO
+
+ALTER TABLE [Invoices] ADD [TotalAmount] real NOT NULL DEFAULT CAST(0 AS real);
+GO
+
+INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+VALUES (N'20221006222827_Actualización de factura y estructura de lineas de factura', N'6.0.9');
+GO
+
+COMMIT;
+GO
+
+
 
 
 

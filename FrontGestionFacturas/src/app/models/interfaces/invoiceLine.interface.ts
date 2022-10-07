@@ -1,8 +1,9 @@
-import { IBaseEntity } from "./base-entity.interface";
-
-export interface IInvoiceLine extends IBaseEntity
+export interface IInvoiceLine
 {
+    id: number,
     item: string,
     quantity: number,
-    itemValue: number
+    itemValue: number,
+    invoiceId: number,
+    isEdit: boolean
 }
