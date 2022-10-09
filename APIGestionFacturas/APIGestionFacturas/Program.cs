@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using APIGestionFacturas.DataAccess;
 using APIGestionFacturas.Services;
 using Microsoft.OpenApi.Models;
+using DinkToPdf.Contracts;
+using DinkToPdf;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,6 +78,8 @@ builder.Services.AddCors(options =>
         policy.AllowAnyMethod().AllowAnyOrigin().AllowAnyHeader()
 ));
 
+// Incluir servicio de creación de pdf
+builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
 
 var app = builder.Build();
 

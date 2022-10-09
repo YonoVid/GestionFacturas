@@ -5,9 +5,10 @@ namespace APIGestionFacturas.DataAccess
 {
     public class GestionFacturasContext: DbContext
     {
+        // Constructor that load options
         public GestionFacturasContext(DbContextOptions<GestionFacturasContext> options): base(options) { }
 
-        //Añadir DbSet de tablas
+        // DbSet of every database table
         public DbSet<User>? Users { get; set; }
         public DbSet<Enterprise>? Enterprises { get; set; }
         public DbSet<Invoice>? Invoices { get; set; }

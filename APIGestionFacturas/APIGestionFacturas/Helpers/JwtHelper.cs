@@ -7,6 +7,12 @@ namespace APIGestionFacturas.Helpers
 {
     public static class JwtHelpers
     {
+        /// <summary>
+        /// Generate all claims from the User token data.
+        /// </summary>
+        /// <param name="userAccounts"> Data from the user token. </param>
+        /// <param name="id"> Guid asociated to token. </param>
+        /// <returns> IEnumeral with all claims from User token data. </returns>
         public static IEnumerable<Claim> GetClaims(this UserToken userAccounts, Guid id)
         {
             List<Claim> claims = new List<Claim>()
@@ -34,12 +40,28 @@ namespace APIGestionFacturas.Helpers
             return claims;
         }
 
+        /// <summary>
+        /// Get user claims from User Token data and generate new Guid.
+        /// </summary>
+        /// <param name="userAccounts"> Data from the user token. </param>
+        /// <param name="Id"> Variable to save new Guid. </param>
+        /// <returns> IEnumeral with all the configured claims. </returns>
         public static IEnumerable<Claim> GetClaims(this UserToken userAccounts, out Guid Id)
         {
-            Id = new Guid();
+            Id = Guid.NewGuid();
             return GetClaims(userAccounts, Id);
         }
 
+
+        /// <summary>
+        /// Generates a JWT token from a base model with user data and selected
+        /// JWT settings.
+        /// </summary>
+        /// <param name="model"> Base data with user information already added. </param>
+        /// <param name="jwtSettings"> Configuration to create JWT token. </param>
+        /// <returns> UserToken with all user data and JWT token </returns>
+        /// <exception cref="ArgumentNullException"> Base model used is null. </exception>
+        /// <exception cref="Exception"> Error happend in token generation. </exception>
         public static UserToken GenTokenKey(UserToken model, JwtSettings jwtSettings)
         {
             try
@@ -50,16 +72,16 @@ namespace APIGestionFacturas.Helpers
                     throw new ArgumentNullException(nameof(model));
                 }
 
-                //Generación de clave secreta
+                // Generate secret key
                 var key = System.Text.Encoding.ASCII.GetBytes(jwtSettings.IssuerSigningKey);
 
                 Guid Id;
-                //Expira en un día
+                // Set expiration time to one day
                 DateTime expireTime = DateTime.UtcNow.AddDays(1);
-                //Indicar validéz del Token
+                // Set token validity
                 userToken.Validity = expireTime.TimeOfDay;
 
-                //Generar JWT
+                // Generate JWT
                 var jwtToken = new JwtSecurityToken(
                         issuer: jwtSettings.ValidIssuer,
                         audience: jwtSettings.ValidAudience,
@@ -72,11 +94,13 @@ namespace APIGestionFacturas.Helpers
                             )
                     );
 
+                userToken.Id = model.Id;
                 userToken.Token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
                 userToken.UserName = model.UserName;
-                userToken.Id = model.Id;
                 userToken.UserRol = model.UserRol;
+                userToken.EmailId = model.EmailId;
                 userToken.GuidId = Id;
+                userToken.ExpireTime = expireTime;
 
                 return userToken;
             }

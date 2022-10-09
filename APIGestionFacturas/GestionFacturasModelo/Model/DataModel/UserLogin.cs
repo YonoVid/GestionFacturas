@@ -2,8 +2,8 @@
 {
     public class UserAuthorization
     {
-        public string? Name { get; set; }
-        public string Email { get; set; }
-        public string Password { get; set; }
+        public string? Name { get; set; }       // Name of the user
+        public string Email { get; set; }       // Email of the user
+        public string Password { get; set; }    // Password of the user
     }
 }

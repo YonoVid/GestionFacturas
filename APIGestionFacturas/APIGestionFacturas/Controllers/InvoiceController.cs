@@ -1,5 +1,6 @@
 ﻿using APIGestionFacturas.DataAccess;
 using APIGestionFacturas.Services;
+using DinkToPdf.Contracts;
 using GestionFacturasModelo.Model.DataModel;
 using GestionFacturasModelo.Model.Templates;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -15,20 +16,50 @@ namespace APIGestionFacturas.Controllers
     [ApiController]
     public class InvoiceController : ControllerBase
     {
-        private readonly GestionFacturasContext _context;
-        private readonly IInvoiceService _invoiceService;
-        private readonly IInvoiceLineService _invoiceLineService;
-        private readonly JwtSettings _jwtSettings;
+        private readonly GestionFacturasContext _context;           //Contexto de las bases de datos
+        private readonly IInvoiceService _invoiceService;           //Servicios relacionados a las facturas
+        private readonly IInvoiceLineService _invoiceLineService;   //Servicios relacionados a lineas de las facturas
+        private readonly IConverter _converter;                     //Funciones de generación de pdf
+        private readonly JwtSettings _jwtSettings;                  //Configuraciones de JWT
 
+        //Inicialización del controlador asignando instancias de los servicios asociados
         public InvoiceController(GestionFacturasContext context,
                             IInvoiceService invoiceService,
                             IInvoiceLineService invoiceLineService,
+                            IConverter converter,
                             JwtSettings jwtSettings)
         {
             _context = context;
             _invoiceService = invoiceService;
             _invoiceLineService = invoiceLineService;
+            _converter = converter;
             _jwtSettings = jwtSettings;
+        }
+
+        // GET: api/Invoice/GetInvoicePdf/5
+        /*
+         * Función para realizar la generación de pdfs y entregarlos 
+         * @param Se requiere {id} de la factura
+        */
+        [HttpGet]
+        [Route("[action]/{id}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
+        public async Task<ActionResult> GetInvoicePdf(int id)
+        {
+
+            var invoice = await _invoiceService.GetAvailableInvoice(_context.Invoices, HttpContext.User, id);
+
+            if (invoice == null)
+            {
+                return NotFound();
+            }
+
+            var invoiceLines = _invoiceLineService.GetAvailableInvoiceLines(_context.InvoiceLines, HttpContext.User, id).ToArray();
+
+            var pdf = _invoiceService.GetInvoicePdf(invoice.Enterprise, invoice, invoiceLines);
+
+
+            return File(_converter.Convert(pdf), "application/pdf");
         }
 
         // **** CRUD de la tabla ****
@@ -39,14 +70,13 @@ namespace APIGestionFacturas.Controllers
         public async Task<ActionResult<IEnumerable<Invoice>>> GetInvoices()
         {
 
-            var invoices = await _invoiceService.getAvailableInvoices(_context.Invoices, HttpContext.User).ToListAsync();
+            var invoices = await _invoiceService.GetAvailableInvoices(_context.Invoices, HttpContext.User).ToListAsync();
 
             if(invoices != null)
             {
                 return invoices;
             }
 
-            //_logger.LogInformation($"{nameof(UsersController)} - {nameof(GetUsers)}:: RUNNING FUNCTION CALL");
 
             return new List<Invoice>();
         }
@@ -56,7 +86,7 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<IEnumerable<Invoice>>> GetEnterpriseInvoices(int id)
         {
-            var invoices = await _invoiceService.getAvailableEnterpriseInvoices(_context.Invoices, HttpContext.User, id).ToListAsync();
+            var invoices = await _invoiceService.GetAvailableEnterpriseInvoices(_context.Invoices, HttpContext.User, id).ToListAsync();
             if (invoices != null)
             {
                 return invoices;
@@ -70,8 +100,7 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<Invoice>> GetInvoice(int id)
         {
-            //_logger.LogInformation($"{nameof(UsersController)} - {nameof(GetUsers)}:: RUNNING FUNCTION CALL");
-            var invoice = await _invoiceService.getAvailableInvoice(_context.Invoices, HttpContext.User, id);
+            var invoice = await _invoiceService.GetAvailableInvoice(_context.Invoices, HttpContext.User, id);
 
             if (invoice == null)
             {
@@ -87,7 +116,6 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<IActionResult> PutInvoice(int id, InvoiceEditable invoiceData)
         {
-            // _logger.LogInformation($"{nameof(UsersController)} - {nameof(PutUser)}:: RUNNING FUNCTION CALL");
 
             Invoice editedInvoice;
 
@@ -100,7 +128,7 @@ namespace APIGestionFacturas.Controllers
 
             try
             {
-                editedInvoice = await _invoiceService.editInvoice(_context, HttpContext.User, invoiceData, id);
+                editedInvoice = await _invoiceService.EditInvoice(_context, HttpContext.User, invoiceData, id);
                 if(invoiceData.InvoiceLines?.Count > 0)
                 {
                     List<InvoiceLine> invoiceLines = await _context.InvoiceLines.Where((InvoiceLine row) => row.InvoiceId == id).ToListAsync();
@@ -111,11 +139,11 @@ namespace APIGestionFacturas.Controllers
                     {
                         if (invoiceLines.Count > invoiceLineIndex)
                         {
-                            await _invoiceLineService.editInvoiceLine(_context, HttpContext.User, invoiceLineData, id);
+                            await _invoiceLineService.EditInvoiceLine(_context, HttpContext.User, invoiceLineData, id);
                         }
                         else
                         {
-                            await _invoiceLineService.createInvoiceLine(_context, HttpContext.User, invoiceLineData, id);
+                            await _invoiceLineService.CreateInvoiceLine(_context, HttpContext.User, invoiceLineData, id);
                         }
 
                         invoiceLineIndex++;
@@ -153,8 +181,6 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<Invoice>> PostInvoice(InvoiceEditable invoiceData)
         {
-            //_logger.LogInformation($"{nameof(UsersController)} - {nameof(PostUser)}:: RUNNING FUNCTION CALL");
-
             Invoice createdInvoice;
 
             if(invoiceData.Name == null &&
@@ -165,12 +191,12 @@ namespace APIGestionFacturas.Controllers
             }
             try
             {
-                createdInvoice = await _invoiceService.createInvoice(_context, HttpContext.User, invoiceData);
+                createdInvoice = await _invoiceService.CreateInvoice(_context, HttpContext.User, invoiceData);
                 if (invoiceData.InvoiceLines?.Count > 0)
                 {
                     foreach (InvoiceLineEditable invoiceLineData in invoiceData.InvoiceLines)
                     {
-                        await _invoiceLineService.createInvoiceLine(_context, HttpContext.User, invoiceLineData, createdInvoice.Id);
+                        await _invoiceLineService.CreateInvoiceLine(_context, HttpContext.User, invoiceLineData, createdInvoice.Id);
                     }
                 }
             }
@@ -191,12 +217,10 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<IActionResult> DeleteInvoice(int id)
         {
-            //_logger.LogInformation($"{nameof(UsersController)} - {nameof(DeleteUser)}:: RUNNING FUNCTION CALL");
-
             Invoice deletedInvoice;
             try
             {
-                deletedInvoice = await _invoiceService.deleteInvoice(_context, HttpContext.User, id);
+                deletedInvoice = await _invoiceService.DeleteInvoice(_context, HttpContext.User, id);
             }
             catch(KeyNotFoundException ex)
             {

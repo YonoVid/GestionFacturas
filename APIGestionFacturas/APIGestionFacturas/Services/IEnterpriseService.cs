@@ -8,20 +8,55 @@ namespace APIGestionFacturas.Services
 {
     public interface IEnterpriseService
     {
-        IQueryable<Enterprise> getAvailableEnterprises(IQueryable<Enterprise> enterprises, ClaimsPrincipal userClaims);
-        Task<Enterprise> getAvailableEnterprise(DbSet<Enterprise> enterprises, ClaimsPrincipal userClaims, int id);
+        /// <summary>
+        /// Function return the enterprises available to the user.
+        /// </summary>
+        /// <param name="enterprises"> The data of the enterprises to search in. </param>
+        /// <param name="userClaims"> The asociated data of the user making the call.</param>
+        /// <returns> IQueryable with the enterprises available to the user. </returns>
+        IQueryable<Enterprise>? GetAvailableEnterprises(IQueryable<Enterprise> enterprises, ClaimsPrincipal userClaims);
+        /// <summary>
+        /// Function may return a enterprise, but only the user is authorized to read it.
+        /// </summary>
+        /// <param name="enterprises"> The data of the enterprises to search in. </param>
+        /// <param name="userClaims"> The asociated data of the user making the call.</param>
+        /// <param name="id"> Id asociated to the selected enterprise. </param>
+        /// <returns> Task with the requested invoice or null otherwise </returns>
+        Task<Enterprise?> GetAvailableEnterprise(DbSet<Enterprise> enterprises, ClaimsPrincipal userClaims, int id);
 
-        Task<Enterprise> createEnterprise(GestionFacturasContext _context,
+        /// <summary>
+        /// Function to create a Enterprise class inside a database.
+        /// </summary>
+        /// <param name="_context"> Stores the invoices and it's related data. </param>
+        /// <param name="userClaims"> The asociated data of the user making the call.</param>
+        /// <param name="enterpriseData"> Data to edit the selected enterprise. </param>
+        /// <returns> A Task returns the created enterprise. </returns>
+        Task<Enterprise> CreateEnterprise(GestionFacturasContext _context,
                                       ClaimsPrincipal userClaims,
                                       EnterpriseEditable enterpriseData);
 
-        Task<Enterprise> deleteEnterprise(GestionFacturasContext _context,
-                                       ClaimsPrincipal userClaims,
-                                       int enterpriseId);
-
-        Task<Enterprise> editEnterprise(GestionFacturasContext _context,
+        /// <summary>
+        /// Function to update a Enterprise class inside a database.
+        /// </summary>
+        /// <param name="_context"> Stores the invoices and it's related data. </param>
+        /// <param name="userClaims"> The asociated data of the user making the call.</param>
+        /// <param name="enterpriseData"> Data to edit the selected enterprise. </param>
+        /// <param name="enterpriseId"> Id asociated to the selected enterprise. </param>
+        /// <returns> A Task returns the updated enterprise. </returns>
+        Task<Enterprise> EditEnterprise(GestionFacturasContext _context,
                                      ClaimsPrincipal userClaims,
                                      EnterpriseEditable enterpriseData,
                                      int enterpriseId);
+
+        /// <summary>
+        /// Function to delete a Enterprise class inside a database.
+        /// </summary>
+        /// <param name="_context"> Stores the invoices and it's related data. </param>
+        /// <param name="userClaims"> The asociated data of the user making the call.</param>
+        /// <param name="enterpriseId"> Id asociated to the selected enterprise. </param>
+        /// <returns> A Task returns the deleted enterprise. </returns>
+        Task<Enterprise> DeleteEnterprise(GestionFacturasContext _context,
+                                       ClaimsPrincipal userClaims,
+                                       int enterpriseId);
     }
 }

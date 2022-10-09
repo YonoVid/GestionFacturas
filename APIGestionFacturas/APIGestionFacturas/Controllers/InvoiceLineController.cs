@@ -36,7 +36,7 @@ namespace APIGestionFacturas.Controllers
         public async Task<ActionResult<IEnumerable<InvoiceLine>>> GetInvoiceLines()
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(GetUsers)}:: RUNNING FUNCTION CALL");
-            var invoiceLines = await _invoiceLineService.getAvailableInvoiceLines(_context.InvoiceLines, HttpContext.User).ToListAsync();
+            var invoiceLines = await _invoiceLineService.GetAvailableInvoiceLines(_context.InvoiceLines, HttpContext.User).ToListAsync();
             if (invoiceLines != null)
             {
                 return invoiceLines;
@@ -50,7 +50,7 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<IEnumerable<InvoiceLine>>> GetInvoiceLines(int id)
         {
-            var invoiceLines = await _invoiceLineService.getAvailableInvoiceLines(_context.InvoiceLines, HttpContext.User, id).ToListAsync();
+            var invoiceLines = await _invoiceLineService.GetAvailableInvoiceLines(_context.InvoiceLines, HttpContext.User, id).ToListAsync();
             if (invoiceLines != null)
             {
                 return invoiceLines;
@@ -65,7 +65,7 @@ namespace APIGestionFacturas.Controllers
         public async Task<ActionResult<InvoiceLine>> GetInvoiceLine(int id)
         {
             //_logger.LogInformation($"{nameof(UsersController)} - {nameof(GetUsers)}:: RUNNING FUNCTION CALL");
-            var invoiceLine = await _invoiceLineService.getAvailableInvoiceLine(_context.InvoiceLines, HttpContext.User, id);
+            var invoiceLine = await _invoiceLineService.GetAvailableInvoiceLine(_context.InvoiceLines, HttpContext.User, id);
 
             if (invoiceLine == null)
             {
@@ -94,7 +94,7 @@ namespace APIGestionFacturas.Controllers
 
             try
             {
-                editedInvoiceLine = await _invoiceLineService.editInvoiceLine(_context, HttpContext.User, invoiceLineData, id);
+                editedInvoiceLine = await _invoiceLineService.EditInvoiceLine(_context, HttpContext.User, invoiceLineData, id);
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -133,7 +133,7 @@ namespace APIGestionFacturas.Controllers
 
             try
             {
-                createdInvoiceLine = await _invoiceLineService.createInvoiceLine(_context, HttpContext.User, invoiceLineData, (int)invoiceLineData.InvoiceId);
+                createdInvoiceLine = await _invoiceLineService.CreateInvoiceLine(_context, HttpContext.User, invoiceLineData, (int)invoiceLineData.InvoiceId);
             }
             catch (KeyNotFoundException ex)
             {
@@ -158,7 +158,7 @@ namespace APIGestionFacturas.Controllers
 
             try
             {
-                deletedInvoiceLine = await _invoiceLineService.deleteInvoiceLine(_context, HttpContext.User, id);
+                deletedInvoiceLine = await _invoiceLineService.DeleteInvoiceLine(_context, HttpContext.User, id);
             }
             catch (KeyNotFoundException ex)
             {

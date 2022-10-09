@@ -36,11 +36,11 @@ namespace APIGestionFacturas.Controllers
             try
             {
                 var Token = new UserToken();
-                var Valid = _userService.userExists(_context.Users, userLogin);
+                var Valid = _userService.UserExists(_context.Users, userLogin);
 
                 if (Valid)
                 {
-                    var user = _userService.getUserLogin(_context.Users, userLogin);
+                    var user = _userService.GetUserLogin(_context.Users, userLogin);
                     if (user != null)
                     {
                         Token = JwtHelpers.GenTokenKey(new UserToken()
@@ -75,7 +75,7 @@ namespace APIGestionFacturas.Controllers
         {
             User user = new User(userData);
 
-            if(!_userService.userExists(_context.Users, user))
+            if(!_userService.UserExists(_context.Users, user))
             {
                 user.CreatedBy = "Admin";
 
@@ -141,7 +141,7 @@ namespace APIGestionFacturas.Controllers
             User userEdited;
             try
             {
-                userEdited = await _userService.editUser(_context, HttpContext.User, userData, id);
+                userEdited = await _userService.EditUser(_context, HttpContext.User, userData, id);
             }
             catch (KeyNotFoundException ex)
             {
@@ -153,7 +153,7 @@ namespace APIGestionFacturas.Controllers
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                if (!_userService.userExists(_context.Users, new User(userData)))
+                if (!_userService.UserExists(_context.Users, new User(userData)))
                 {
                     return NotFound();
                 }
@@ -184,7 +184,7 @@ namespace APIGestionFacturas.Controllers
 
             try
             {
-                userCreated = await _userService.createUser(_context, HttpContext.User, userData);
+                userCreated = await _userService.CreateUser(_context, HttpContext.User, userData);
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -204,7 +204,7 @@ namespace APIGestionFacturas.Controllers
             User deletedUser;
             try
             {
-                deletedUser= await _userService.deleteUser(_context, HttpContext.User, id);
+                deletedUser= await _userService.DeleteUser(_context, HttpContext.User, id);
             }
             catch (KeyNotFoundException ex)
             {

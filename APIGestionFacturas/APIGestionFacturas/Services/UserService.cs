@@ -10,46 +10,53 @@ namespace APIGestionFacturas.Services
     public class UserService : IUserService
     {
 
-        public IEnumerable<Enterprise> getUserEnterprises(IQueryable<Enterprise> enterprises, int id)
+        public IEnumerable<Enterprise> GetUserEnterprises(IQueryable<Enterprise> enterprises, int id)
         {
-
-            if (enterprises.Any(enterprises => enterprises.User.Id == id))
-            {
-                return enterprises.Where(enterprise => enterprise.User.Id == id);
-            }
-            return new List<Enterprise>();
+            // Return IEnumerable with the id indicated
+            return enterprises.Where(enterprise => enterprise.User.Id == id);
         }
-        public User? getUserLogin(IQueryable<User> users, UserAuthorization userLogin)
+        public User? GetUserLogin(IQueryable<User> users, UserAuthorization userLogin)
         {
+            // Return user with the provided data
             return users.FirstOrDefault(user => user.Email.ToUpper() == userLogin.Email.ToUpper() &&
                                         user.Password.Equals(userLogin.Password));
         }
-        public bool userExists(IQueryable<User> users, UserAuthorization userToCheck)
+        public bool UserExists(IQueryable<User> users, UserAuthorization userToCheck)
         {
-            return users.Any(user => user.Email.ToUpper() == userToCheck.Email.ToUpper());//_context.Users.Any(e => e.Id == id);
+            // Return if any user has the email in the data provided
+            return users.Any(user => user.Email.ToUpper() == userToCheck.Email.ToUpper());
         }
-        public bool userExists(IQueryable<User> users, User userToCheck)
+        public bool UserExists(IQueryable<User> users, User userToCheck)
         {
-            return users.Any(user => user.Email.ToUpper() == userToCheck.Email.ToUpper());//_context.Users.Any(e => e.Id == id);
+            // Return if any user has the email in the data provided
+            return users.Any(user => user.Email.ToUpper() == userToCheck.Email.ToUpper());
         }
-        public async Task<User> createUser(GestionFacturasContext _context, ClaimsPrincipal userClaims, UserEditable userData)
+        public async Task<User> CreateUser(GestionFacturasContext _context, ClaimsPrincipal userClaims, UserEditable userData)
         {
+            // Create new user from the provided data
             var user = new User(userData);
+
+            // Updated related data of the creation
             user.CreatedBy = userClaims.Identity.Name;
 
-            _context.Users.Add(user);
+            // Add the user to the database and save the changes
+            // Generated user data is updated with genereated id
+            user.Id = _context.Users.Add(user).Entity.Id;
             await _context.SaveChangesAsync();
 
+            // Return created user data
             return user;
         }
 
 
-        public async Task<User> editUser(GestionFacturasContext _context, ClaimsPrincipal userClaims, UserEditable userData, int userId)
+        public async Task<User> EditUser(GestionFacturasContext _context, ClaimsPrincipal userClaims, UserEditable userData, int userId)
         {
+            // Search the requested invoice
             User? user = await _context.Users.FindAsync(userId);
 
             if (user == null)
             {
+                // Throw error if no valid user was found
                 throw new KeyNotFoundException("Usuario no encontrado");
             }
             
@@ -58,40 +65,42 @@ namespace APIGestionFacturas.Services
                 userData.Email == null &&
                 userData.Rol == null))
             {
+                // Throw error if not enough data is provided
                 throw new InvalidOperationException("No hay suficientes datos para modificar la entidad");
             }
-
-            //Se actualiza cada propiedad del usuario si se ha incluido en los datos recibidos
+            // Every value included to modify is updated
             if (userData.Name != null) { user.Name = userData.Name; }
             if (userData.Password != null) { user.Password = userData.Password; }
             if (userData.Email != null) { user.Email = userData.Email; }
             if (userData.Rol != null) { user.Rol = (UserRol)userData.Rol; }
 
-            //Se actualizan la base de datos con los cambios
+            // User is updated and changes are saved
             _context.Users.Update(user);
-
             _context.Entry(user).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
 
-            await _context.SaveChangesAsync();  //Se guardan los cambios de manera asíncrona
-
+            // Return updated user data
             return user;
         }
-        public async Task<User> deleteUser(GestionFacturasContext _context, ClaimsPrincipal userClaims, int userId)
+        public async Task<User> DeleteUser(GestionFacturasContext _context, ClaimsPrincipal userClaims, int userId)
         {
+            // Search the requested user
             var user = await _context.Users.FindAsync(userId);
             if (user == null)
             {
+                // Throw error if no valid user was found
                 throw new KeyNotFoundException("Usuario no encontrado");
             }
-
-            user.DeletedBy = userClaims.Identity.Name;
+            // Updated data of the user related to deletion
+            user.DeletedBy = userClaims.Identity?.Name;
             user.DeletedDate = DateTime.Now;
             user.IsDeleted = true;
 
-
+            // User is updated and changes are saved
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
 
+            // Return deleted user data
             return user;
         }
     }

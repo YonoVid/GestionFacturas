@@ -5,10 +5,10 @@ namespace GestionFacturasModelo.Model.Templates
 {
     public class InvoiceEditable
     {
-        public string? Name { get; set; }
-        public int? TaxPercentage { get; set; }
+        public string? Name { get; set; }                                   // Invoice name
+        public float? TaxPercentage { get; set; }                           // Ivoice tax percentage
 
-        public int? EnterpriseId { get; set; }
-        public ICollection<InvoiceLineEditable>? InvoiceLines { get; set; }
+        public int? EnterpriseId { get; set; }                              // Enterprise of the invoice Id
+        public ICollection<InvoiceLineEditable>? InvoiceLines { get; set; } // Invoice lines of data
     }
 }

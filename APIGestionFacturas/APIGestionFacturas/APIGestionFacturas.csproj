@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="DinkToPdf" Version="1.0.8" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.9">
@@ -22,6 +23,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GestionFacturasModelo\GestionFacturasModelo.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="invoiceFiles\" />
   </ItemGroup>
 
 </Project>

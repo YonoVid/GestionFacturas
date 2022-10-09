@@ -7,9 +7,9 @@ namespace GestionFacturasModelo.Model.Templates
     public class EnterpriseEditable
     {
         [StringLength(50)]
-        public string? Name { get; set; } = String.Empty;
+        public string? Name { get; set; } = String.Empty;   // Enterprise name
         
-        public int? UserId { get; set;}
+        public int? UserId { get; set;}                     // User that manages enterprise Id
         
     }
 }

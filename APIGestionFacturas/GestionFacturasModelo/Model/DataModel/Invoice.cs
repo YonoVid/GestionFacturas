@@ -6,7 +6,10 @@ namespace GestionFacturasModelo.Model.DataModel
 {
     public class Invoice: BaseEntity
     {
+        // Generate default Invoice
         public Invoice() { }
+
+        // Generate default Invoice, but replace values with data
         public Invoice(InvoiceEditable data)
         {
             Name = data.Name;
@@ -15,15 +18,15 @@ namespace GestionFacturasModelo.Model.DataModel
         }
 
         [Required]
-        public string Name { get; set; } = String.Empty;
+        public string Name { get; set; } = String.Empty;                // Name of the invoice
         [Required]
-        public float TaxPercentage { get; set; } = 20;
+        public float TaxPercentage { get; set; } = 20;                  // Tax percentage of the invoice
 
-        public float TotalAmount { get; set; } = 0;
+        public float TotalAmount { get; set; } = 0;                     // Total amount from every invoice line with tax applied
 
         [Required]
-        public Enterprise Enterprise { get; set; } = new Enterprise();
+        public Enterprise Enterprise { get; set; } = new Enterprise();  // Enterprise of the invoice
         [ForeignKey("Enterprise")]
-        public int EnterpriseId { get; set; }
+        public int EnterpriseId { get; set; }                           // Enterprise Id
     }
 }
