@@ -20,11 +20,6 @@ export class InvoiceService {
     return this.http.get('/api/Invoice', this.generateOptions())
   }
 
-  getEnterpriseInvoices(id: number): Observable<any>
-  {
-    return this.http.get('/api/Invoice/GetEnterpriseInvoices/' + id, this.generateOptions())
-  }
-
   getInvoice(id: number): Observable<any>
   {
     return this.http.get('/api/Invoice/' + id, this.generateOptions())
@@ -52,9 +47,29 @@ export class InvoiceService {
     return this.http.delete('/api/InvoiceLine/' + invoiceLine.id, this.generateOptions());
   }
 
-  generateOptions(): any
+  getInvoicePdf(invoice: number): Observable<any>
+  {
+    console.log("GET PDF SERVICE");
+    return this.http.get('/api/Invoice/GetInvoicePdf/' + invoice,this.generateOptions(true));
+  }
+
+  generateOptions(isPdf: boolean = false): any
   {
     let token = sessionStorage.getItem('token');
+    if(isPdf)
+    {
+      return {
+        headers: new HttpHeaders({
+          'Authorization':  'Bearer ' + token,
+          'Access-Control-Allow-Origin':  '*',
+          'Access-Control-Allow-Methods': '*',
+          'Access-Control-Allow-Headers': '*',
+          responseType : 'blob',
+          Accept : 'application/pdf',
+          observe : 'response'
+        })
+      }
+    }
     return {
       headers: new HttpHeaders({
         'Authorization':  'Bearer ' + token,

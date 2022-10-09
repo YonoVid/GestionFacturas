@@ -12,6 +12,7 @@ import { InvoiceTableComponent } from '../invoice-table/invoice-table.component'
 import { MatPaginator } from '@angular/material/paginator';
 import { IInvoiceTableData } from 'src/app/models/interfaces/invoice-table-data.interface';
 import { DatePipe } from '@angular/common';
+import { InvoicePdfComponent } from '../invoice-pdf/invoice-pdf.component';
 
 @Component({
   selector: 'app-home-page',
@@ -48,33 +49,7 @@ export class HomePageComponent implements OnInit {
     }
   }
 
-  openInvoiceTable(invoiceId: number) {
-    let invoice = this.invoices[invoiceId];
-    console.info(`${invoiceId} || ${invoice?.name}`);
-    this.invoiceService.getInvoiceLines(invoice.id).subscribe({
-      next: (response: IInvoiceLine[]) =>
-      {
-        let total = 0;
-        response.forEach((line) => total += line.quantity * line.itemValue);
-
-        this.dialog.open(InvoiceTableComponent, {
-          data:
-          {
-            invoice: invoice,
-            enterprise: this.enterprises[invoice.enterpriseId],
-            invoiceLines: response,
-            total: total
-          } 
-        });
-        
-        console.table(response);
-      },
-      error: (error) => console.error(error),
-      complete: () => console.info('Datos de tabla recopilados')
-    })
-    
-  }
-
+  
   sortData(sort: Sort)
   {
     const data = this.invoicesData;
@@ -157,6 +132,50 @@ export class HomePageComponent implements OnInit {
       {
         console.log("Obtener Empresas desde API:: Finalizado")
       }
+    });
+  }
+  
+  openInvoiceTable(invoiceId: number) {
+    let invoice = this.invoices[invoiceId];
+    console.info(`${invoiceId} || ${invoice?.name}`);
+    this.invoiceService.getInvoiceLines(invoice.id).subscribe({
+      next: (response: IInvoiceLine[]) =>
+      {
+        let total = 0;
+        response.forEach((line) => total += line.quantity * line.itemValue);
+
+        this.dialog.open(InvoiceTableComponent, {
+          data:
+          {
+            invoice: invoice,
+            enterprise: this.enterprises[invoice.enterpriseId],
+            invoiceLines: response,
+            total: total
+          } 
+        });
+        
+        console.table(response);
+      },
+      error: (error) => console.error(error),
+      complete: () => console.info('Datos de tabla recopilados')
+    })
+    
+  }
+
+  openInvoicePdf(id: number)
+  {
+    this.invoiceService.getInvoicePdf(id).subscribe({
+      next:(response) => 
+      {
+        this.dialog.open(InvoicePdfComponent, {
+          data:
+          {
+            pdf: response
+          }
+        });
+      },
+      error: (error) => console.error(error),
+      complete: () => console.info("PDF GENERATION ENDED")
     });
   }
 

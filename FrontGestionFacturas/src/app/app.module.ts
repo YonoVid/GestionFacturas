@@ -9,11 +9,13 @@ import { LayoutModule } from '@angular/cdk/layout';
 import { MaterialModule } from './modules/material/material.module';
 import { AuthFormsModule } from './modules/auth-forms/auth-forms.module';
 import { HttpClientModule } from '@angular/common/http';
+import { InvoicePdfComponent } from './modules/pages/home/invoice-pdf/invoice-pdf.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     NavComponent,
+    InvoicePdfComponent,
   ],
   imports: [
     BrowserModule,
