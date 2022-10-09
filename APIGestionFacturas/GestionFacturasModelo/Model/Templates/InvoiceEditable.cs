@@ -9,6 +9,5 @@ namespace GestionFacturasModelo.Model.Templates
         public float? TaxPercentage { get; set; }                           // Ivoice tax percentage
 
         public int? EnterpriseId { get; set; }                              // Enterprise of the invoice Id
-        public ICollection<InvoiceLineEditable>? InvoiceLines { get; set; } // Invoice lines of data
     }
 }

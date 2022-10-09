@@ -35,13 +35,16 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<IEnumerable<InvoiceLine>>> GetInvoiceLines()
         {
-            //_logger.LogInformation($"{nameof(UsersController)} - {nameof(GetUsers)}:: RUNNING FUNCTION CALL");
+            // Use service to get available invoice lines
             var invoiceLines = await _invoiceLineService.GetAvailableInvoiceLines(_context.InvoiceLines, HttpContext.User).ToListAsync();
+
+            // Check is result is null
             if (invoiceLines != null)
             {
+                // Return all invoice lines of the invoice from the database
                 return invoiceLines;
             }
-
+            // Return empty list if result of service is null
             return new List<InvoiceLine>();
         }
 
@@ -50,12 +53,15 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<IEnumerable<InvoiceLine>>> GetInvoiceLines(int id)
         {
+            // Use service to get available invoice lines from invoice of the id
             var invoiceLines = await _invoiceLineService.GetAvailableInvoiceLines(_context.InvoiceLines, HttpContext.User, id).ToListAsync();
+
             if (invoiceLines != null)
             {
+                // Return all invoice lines of the invoice from the database
                 return invoiceLines;
             }
-
+            // Return empty list if result of service is null
             return new List<InvoiceLine>();
         }
 
@@ -64,14 +70,15 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<InvoiceLine>> GetInvoiceLine(int id)
         {
-            //_logger.LogInformation($"{nameof(UsersController)} - {nameof(GetUsers)}:: RUNNING FUNCTION CALL");
+            // Search selected invoice line with the id in the database
             var invoiceLine = await _invoiceLineService.GetAvailableInvoiceLine(_context.InvoiceLines, HttpContext.User, id);
 
             if (invoiceLine == null)
             {
+                // If invoice line isn't found send NotFound result
                 return NotFound();
             }
-
+            // Return founded invoice line
             return invoiceLine;
         }
 
@@ -81,35 +88,30 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<IActionResult> PutInvoiceLine(int id, InvoiceLineEditable invoiceLineData)
         {
-            // _logger.LogInformation($"{nameof(UsersController)} - {nameof(PutUser)}:: RUNNING FUNCTION CALL");
-
+            // Create variable to store updated invoice line
             InvoiceLine editedInvoiceLine;
-
-            if(invoiceLineData.Item == null &&
-               invoiceLineData.Quantity == null &&
-               invoiceLineData.ItemValue == null)
-            {
-                return BadRequest("Faltan datos para modificar la entidad");
-            }
 
             try
             {
+                // Use service to update and store invoice line
                 editedInvoiceLine = await _invoiceLineService.EditInvoiceLine(_context, HttpContext.User, invoiceLineData, id);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // For any other error from the database throw an exception
+                return BadRequest(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                // If key of invoice line is not found return NotFound result
+                return BadRequest(ex.Message);
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                if (true)//!_enterpriseService.userExists(_context.Users, user))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    //_logger.LogWarning($"{nameof(UsersController)} - {nameof(PutUser)}:: UNEXPECTED BEHAVIOUR IN FUNCTION CALL");
-
-                    throw ex;
-                }
-            }
-
+                // For any other error from the database throw an exception
+                throw ex;
+             }
+            // Return data from the updated invoice line
             return CreatedAtAction("PutInvoiceLine", new { id = editedInvoiceLine.Id }, editedInvoiceLine);
         }
 
@@ -119,31 +121,29 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<InvoiceLine>> PostInvoiceLine(InvoiceLineEditable invoiceLineData)
         {
-            //_logger.LogInformation($"{nameof(UsersController)} - {nameof(PostUser)}:: RUNNING FUNCTION CALL");
-
+            // Create variable to store created invoice line
             InvoiceLine createdInvoiceLine;
-
-            if (invoiceLineData.Item == null ||
-                invoiceLineData.Quantity == null ||
-                invoiceLineData.ItemValue == null ||
-                invoiceLineData.InvoiceId == null)
-            {
-                return BadRequest("Faltan datos para generar la entidad");
-            }
-
             try
             {
+                // Use service to create and store invoice line
                 createdInvoiceLine = await _invoiceLineService.CreateInvoiceLine(_context, HttpContext.User, invoiceLineData, (int)invoiceLineData.InvoiceId);
             }
             catch (KeyNotFoundException ex)
             {
+                // If key of invoice is not found return NotFound result
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // If not enough data is provided
                 return BadRequest(ex.Message);
             }
             catch (DbUpdateConcurrencyException ex)
             {
+                // For any other error from the database throw an exception
                 throw ex;
             }
-
+            // Return data from the created invoice line
             return CreatedAtAction("PostInvoiceLine", new { id = createdInvoiceLine.Id }, createdInvoiceLine);
         }
 
@@ -152,20 +152,20 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<IActionResult> DeleteInvoiceLine(int id)
         {
-            //_logger.LogInformation($"{nameof(UsersController)} - {nameof(DeleteUser)}:: RUNNING FUNCTION CALL");
-
+            // Create variable to store deleted invoice line
             InvoiceLine deletedInvoiceLine;
 
             try
             {
+                // Use service to obtain deleted invoice line and store it
                 deletedInvoiceLine = await _invoiceLineService.DeleteInvoiceLine(_context, HttpContext.User, id);
             }
             catch (KeyNotFoundException ex)
             {
+                // If the invoice is not founded
                 return NotFound();
             }
-
-
+            // Return message to indicate action was successful
             return Ok();
         }
     }

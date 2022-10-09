@@ -84,6 +84,12 @@ namespace APIGestionFacturas.Services
                                                  ClaimsPrincipal userClaims,
                                                  InvoiceEditable invoiceData)
         {
+            if (invoiceData.Name == null ||
+                invoiceData.EnterpriseId == null ||
+                invoiceData.TaxPercentage == null)
+            {
+                throw new InvalidOperationException("Faltan datos para generar la entidad");
+            }
             // Create new invoice from the provided data
             var invoice = new Invoice(invoiceData);
 
@@ -121,8 +127,7 @@ namespace APIGestionFacturas.Services
             }
             if(invoiceData.Name == null &&
                invoiceData.TaxPercentage == null &&
-               invoiceData.EnterpriseId == null &&
-               invoiceData.InvoiceLines == null)
+               invoiceData.EnterpriseId == null)
             {
                 // Throw error if not enough data is provided
                 throw new InvalidOperationException("No hay suficientes datos para modificar la entidad");

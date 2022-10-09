@@ -51,6 +51,12 @@ namespace APIGestionFacturas.Services
                                               ClaimsPrincipal userClaims,
                                               EnterpriseEditable enterpriseData)
         {
+            if (enterpriseData.Name == null)
+            {
+                // Throw error if not enough data is provided
+                throw new InvalidOperationException("Faltan datos para generar la entidad"); 
+            }
+
             // Create new enterprise from the provided data
             var enterprise = new Enterprise(enterpriseData);
 

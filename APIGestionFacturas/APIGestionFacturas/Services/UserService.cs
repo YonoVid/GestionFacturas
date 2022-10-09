@@ -33,6 +33,19 @@ namespace APIGestionFacturas.Services
         }
         public async Task<User> CreateUser(GestionFacturasContext _context, ClaimsPrincipal userClaims, UserEditable userData)
         {
+            if (userData.Name == null ||
+                userData.Email == null ||
+                userData.Password == null)
+             {
+                // Throw error if not enough data is provided
+                throw new InvalidOperationException("No hay suficientes datos para modificar la entidad");
+            }
+
+            if(UserExists(_context.Users, new User(userData)))
+            {
+                throw new InvalidOperationException("Usuario con el mismo correo ya existe");
+            }
+
             // Create new user from the provided data
             var user = new User(userData);
 
@@ -47,7 +60,6 @@ namespace APIGestionFacturas.Services
             // Return created user data
             return user;
         }
-
 
         public async Task<User> EditUser(GestionFacturasContext _context, ClaimsPrincipal userClaims, UserEditable userData, int userId)
         {

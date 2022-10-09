@@ -83,6 +83,14 @@ namespace APIGestionFacturas.Services
                                                          InvoiceLineEditable invoiceLineData,
                                                          int invoiceId)
         {
+            if (invoiceLineData.Item == null ||
+                invoiceLineData.Quantity == null ||
+                invoiceLineData.ItemValue == null ||
+                invoiceLineData.InvoiceId == null)
+            {
+                // Throw error if not enough data is provided
+                throw new InvalidOperationException("Faltan datos para generar la entidad");
+            }
             // Create new invoice line from data provided
             var invoiceLine = new InvoiceLine(invoiceLineData);
 
@@ -119,21 +127,20 @@ namespace APIGestionFacturas.Services
                                                        InvoiceLineEditable invoiceLineData,
                                                        int invoiceLineId)
         {
+            if (invoiceLineData.Item == null &&
+               invoiceLineData.Quantity == null &&
+               invoiceLineData.ItemValue == null)
+            {
+                // Throw error if not enough data is provided
+                throw new InvalidOperationException("No hay suficientes datos para modificar la entidad");
+            }
             // Search the requested invoice line
             InvoiceLine? invoiceLine = await GetAvailableInvoiceLine(_context.InvoiceLines, userClaims, invoiceLineId);
 
             if (invoiceLine == null)
             {
                 // Throw error if no valid invoice was found
-                throw new InvalidOperationException("No hay suficientes datos para modificar la entidad");
-            }
-            if (invoiceLineData.Item == null &&
-               invoiceLineData.Quantity== null &&
-               invoiceLineData.ItemValue == null)
-            {
-
-                // Throw error if not enough data is provided
-                throw new InvalidOperationException("No hay suficientes datos para modificar la entidad");
+                throw new KeyNotFoundException("Linea de factura no encontrada");
             }
 
             // Modify item if is in data

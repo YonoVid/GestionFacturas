@@ -15,10 +15,11 @@ namespace APIGestionFacturas.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        private readonly GestionFacturasContext _context;       //Contexto con las referencias a tablas de la base de datos
-        private readonly IUserService _userService;             //Servicio relacionado a los usuarios
-        private readonly JwtSettings _jwtSettings;              //Configuración de JWT
+        private readonly GestionFacturasContext _context;
+        private readonly IUserService _userService;
+        private readonly JwtSettings _jwtSettings;
 
+        //Initialize services
         public UsersController(GestionFacturasContext context,
                                 IUserService userService,
                                 JwtSettings jwtSettings)
@@ -28,21 +29,24 @@ namespace APIGestionFacturas.Controllers
             _jwtSettings = jwtSettings;
         }
 
-
         [HttpPost]
         [Route("[action]")]
         public IActionResult Login(UserAuthorization userLogin)
         {
             try
             {
+                // Generate new UserToken class
                 var Token = new UserToken();
+                // Check if user exists
                 var Valid = _userService.UserExists(_context.Users, userLogin);
 
                 if (Valid)
                 {
+                    // Check if user login data is correct
                     var user = _userService.GetUserLogin(_context.Users, userLogin);
                     if (user != null)
                     {
+                        // Create new Token
                         Token = JwtHelpers.GenTokenKey(new UserToken()
                         {
                             UserName = user.Name,
@@ -56,6 +60,7 @@ namespace APIGestionFacturas.Controllers
                 }
                 else return BadRequest("Usuario no encontrado");
 
+                // Return generated token
                 return Ok(new
                 {
                     Token,
@@ -73,21 +78,26 @@ namespace APIGestionFacturas.Controllers
         [Route("[action]")]
         public async Task<ActionResult<User>> Register(UserAuthorization userData)
         {
+            // Generate new User class from the data
             User user = new User(userData);
 
+            // Check if user with same unique data already exists
             if(!_userService.UserExists(_context.Users, user))
             {
+                // Create and save user
                 user.CreatedBy = "Admin";
-
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
+                // Hide password
                 user.Password = "*********";
+
+                // Return created user
                 return CreatedAtAction("GetUser", new { id = user.Id }, user);
             }
 
+            // If the user exists return BadRequest
             return BadRequest("El usuario ya existe");
-            
         }
 
         [HttpPost]
@@ -95,9 +105,11 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<IActionResult> ChangeRol(int id, UserRol rol)
         {
+            // Create user editable with the new rol
             UserEditable userData = new UserEditable();
             userData.Rol = rol;
 
+            // Call controller function to modify user data
             return await PutUser(id, userData);
 
         }
@@ -110,7 +122,7 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
-            //_logger.LogInformation($"{nameof(UsersController)} - {nameof(GetUsers)}:: RUNNING FUNCTION CALL");
+            // Return all users from the database
             return await _context.Users.ToListAsync();
         }
 
@@ -119,14 +131,15 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<ActionResult<User>> GetUser(int id)
         {
-            //_logger.LogInformation($"{nameof(UsersController)} - {nameof(GetUsers)}:: RUNNING FUNCTION CALL");
+            // Search selected user with the id in the database
             var user = await _context.Users.FindAsync(id);
 
             if (user == null)
             {
+                // If user isn't found send NotFound result
                 return NotFound();
             }
-
+            // Return founded user
             return user;
         }
 
@@ -136,35 +149,30 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<IActionResult> PutUser(int id, UserEditable userData)
         {
-            // _logger.LogInformation($"{nameof(UsersController)} - {nameof(PutUser)}:: RUNNING FUNCTION CALL");
-
+            // Define variable to store edited user
             User userEdited;
             try
             {
+                // Use service to obtain edited user and store it
                 userEdited = await _userService.EditUser(_context, HttpContext.User, userData, id);
             }
             catch (KeyNotFoundException ex)
             {
+                // If key is not found return NotFound result
                 return NotFound(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
+                // If not enough data is provided return BadRequest result
                 return BadRequest(ex.Message);
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                if (!_userService.UserExists(_context.Users, new User(userData)))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    //_logger.LogWarning($"{nameof(UsersController)} - {nameof(PutUser)}:: UNEXPECTED BEHAVIOUR IN FUNCTION CALL");
-
-                    throw ex;
-                }
+                // For any other error from the database throw an exception
+                throw ex;
             }
 
+            // Return data from the edited user
             return CreatedAtAction("PutUser", new { id = userEdited.Id }, userEdited);
         }
 
@@ -174,23 +182,24 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<ActionResult<User>> PostUser(UserEditable userData)
         {
-            //_logger.LogInformation($"{nameof(UsersController)} - {nameof(PostUser)}:: RUNNING FUNCTION CALL");
+            // Create variable to store created user
             User userCreated;
-            if(userData.Name == null ||
-                userData.Email == null ||
-                userData.Password == null ||
-                userData.Rol == null) 
-            { return BadRequest("Faltan datos para generar la entidad"); }
-
             try
             {
+                // Use service to create and store user
                 userCreated = await _userService.CreateUser(_context, HttpContext.User, userData);
+            }
+            catch(InvalidOperationException ex)
+            {
+                // If not enough data is provided return BadRequest result
+                return BadRequest(ex.Message);
             }
             catch (DbUpdateConcurrencyException ex)
             {
+                // For any other error from the database throw an exception
                 throw ex;
             }
-
+            // Return data from the created user
             return CreatedAtAction("PostUser", new { id = userCreated.Id }, userCreated);
         }
 
@@ -199,19 +208,21 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            //_logger.LogInformation($"{nameof(UsersController)} - {nameof(DeleteUser)}:: RUNNING FUNCTION CALL");
-
+            // Create variable to store deleted user
             User deletedUser;
             try
             {
-                deletedUser= await _userService.DeleteUser(_context, HttpContext.User, id);
+                // Use service to obtain deleted user and store it
+                deletedUser = await _userService.DeleteUser(_context, HttpContext.User, id);
             }
             catch (KeyNotFoundException ex)
             {
+                // If the user is not founded
                 return NotFound();
             }
 
-            return NoContent();
+            // Return message to indicate action was successful
+            return Ok();
         }
     }
 }

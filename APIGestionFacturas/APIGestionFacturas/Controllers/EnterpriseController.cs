@@ -19,7 +19,8 @@ namespace APIGestionFacturas.Controllers
         private readonly GestionFacturasContext _context;           //Contexto con las referencias a tablas de la base de datos
         private readonly IEnterpriseService _enterpriseService;     //Servicio relacionado a las empresas
         private readonly JwtSettings _jwtSettings;                  //Configuración de JWT
-
+        
+        //Initialize services
         public EnterpriseController(GestionFacturasContext context,
                             IEnterpriseService enterpriseService,
                             JwtSettings jwtSettings)
@@ -36,12 +37,15 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<IEnumerable<Enterprise>>> GetEnterprises()
         {
-            var enterprises = await _enterpriseService.getAvailableEnterprises(_context.Enterprises, HttpContext.User).ToListAsync();
+            // Use service to get available enterprises
+            var enterprises = await _enterpriseService.GetAvailableEnterprises(_context.Enterprises, HttpContext.User).ToListAsync();
+            
             if (enterprises != null)
             {
+                // Return all available enterprises from the database
                 return enterprises;
             }
-            //_logger.LogInformation($"{nameof(UsersController)} - {nameof(GetUsers)}:: RUNNING FUNCTION CALL");
+            // Return empty list if result of service is null
             return new List<Enterprise>();
         }
 
@@ -50,15 +54,15 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<Enterprise>> GetEnterprise(int id)
         {
-            //_logger.LogInformation($"{nameof(UsersController)} - {nameof(GetUsers)}:: RUNNING FUNCTION CALL");
-
-            var enterprise = await _enterpriseService.getAvailableEnterprise(_context.Enterprises, HttpContext.User, id);
+            // Search selected enterprise with the id in the database
+            var enterprise = await _enterpriseService.GetAvailableEnterprise(_context.Enterprises, HttpContext.User, id);
 
             if (enterprise == null)
             {
+                // If enterprise isn't found send NotFound result
                 return NotFound();
             }
-
+            // Return founded enterprise
             return enterprise;
         }
 
@@ -68,37 +72,29 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<IActionResult> PutEnterprise(int id, EnterpriseEditable enterpriseData)
         {
-            // _logger.LogInformation($"{nameof(UsersController)} - {nameof(PutUser)}:: RUNNING FUNCTION CALL");
-
-
+            // Create variable to store updated enterprise
             Enterprise editedEnterprise;
-
             try
             {
-                editedEnterprise = await _enterpriseService.editEnterprise(_context, HttpContext.User, enterpriseData, id);
+                // Use service to update and store enterprise
+                editedEnterprise = await _enterpriseService.EditEnterprise(_context, HttpContext.User, enterpriseData, id);
             }
             catch (KeyNotFoundException ex)
             {
+                // If key of the enterprise is not found return NotFound result
                 return NotFound(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
+                // If not enough data is provided
                 return BadRequest(ex.Message);
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                if (_context.Invoices.Any(e => e.Id == id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    //_logger.LogWarning($"{nameof(UsersController)} - {nameof(PutUser)}:: UNEXPECTED BEHAVIOUR IN FUNCTION CALL");
-
-                    throw ex;
-                }
+                // For any other error from the database throw an exception
+                throw ex;
             }
-
+            // Return data from the updated enterprise
             return CreatedAtAction("PutEnterprise", new { id = editedEnterprise.Id }, editedEnterprise);
         }
 
@@ -108,26 +104,30 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<ActionResult<Enterprise>> PostEnterprise(EnterpriseEditable enterpriseData)
         {
-            //_logger.LogInformation($"{nameof(UsersController)} - {nameof(PostUser)}:: RUNNING FUNCTION CALL");
-
+            // Create variable to store created enterprise
             Enterprise createdEnterprise;
-
-            if(enterpriseData.Name == null) 
-            { return BadRequest("Faltan datos para generar la entidad"); }
 
             try
             {
-                createdEnterprise = await _enterpriseService.createEnterprise(_context, HttpContext.User, enterpriseData);
+                // Use service to create and store enterprise
+                createdEnterprise = await _enterpriseService.CreateEnterprise(_context, HttpContext.User, enterpriseData);
             }
             catch (KeyNotFoundException ex)
             {
+                // If key of the enterprise is not found return NotFound result
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // If not enough data is provided
                 return BadRequest(ex.Message);
             }
             catch (DbUpdateConcurrencyException ex)
             {
+                // For any other error from the database throw an exception
                 throw ex;
             }
-
+            // Return data from the created enterprise
             return CreatedAtAction("PostEnterprise", new { id = createdEnterprise.Id }, createdEnterprise);
         }
 
@@ -136,19 +136,20 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<IActionResult> DeleteEnterprise(int id)
         {
-            //_logger.LogInformation($"{nameof(UsersController)} - {nameof(DeleteUser)}:: RUNNING FUNCTION CALL");
-
+            // Create variable to store deleted enterprise
             Enterprise deletedEnterprise;
 
             try
             {
-                deletedEnterprise = await _enterpriseService.deleteEnterprise(_context, HttpContext.User, id);
+                // Use service to obtain deleted enterprise and store it
+                deletedEnterprise = await _enterpriseService.DeleteEnterprise(_context, HttpContext.User, id);
             }
             catch (KeyNotFoundException ex)
             {
-                return NotFound();
+                // If the enterprise is not founded
+                return NotFound(ex.Message);
             }
-
+            // Return message to indicate action was successful
             return Ok();
         }
     }

@@ -16,13 +16,13 @@ namespace APIGestionFacturas.Controllers
     [ApiController]
     public class InvoiceController : ControllerBase
     {
-        private readonly GestionFacturasContext _context;           //Contexto de las bases de datos
-        private readonly IInvoiceService _invoiceService;           //Servicios relacionados a las facturas
-        private readonly IInvoiceLineService _invoiceLineService;   //Servicios relacionados a lineas de las facturas
-        private readonly IConverter _converter;                     //Funciones de generación de pdf
-        private readonly JwtSettings _jwtSettings;                  //Configuraciones de JWT
+        private readonly GestionFacturasContext _context;
+        private readonly IInvoiceService _invoiceService;
+        private readonly IInvoiceLineService _invoiceLineService;
+        private readonly IConverter _converter;
+        private readonly JwtSettings _jwtSettings;                 
 
-        //Inicialización del controlador asignando instancias de los servicios asociados
+        //Initialize services
         public InvoiceController(GestionFacturasContext context,
                             IInvoiceService invoiceService,
                             IInvoiceLineService invoiceLineService,
@@ -37,28 +37,26 @@ namespace APIGestionFacturas.Controllers
         }
 
         // GET: api/Invoice/GetInvoicePdf/5
-        /*
-         * Función para realizar la generación de pdfs y entregarlos 
-         * @param Se requiere {id} de la factura
-        */
         [HttpGet]
         [Route("[action]/{id}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult> GetInvoicePdf(int id)
         {
-
+            // User serviec to get the requested id
             var invoice = await _invoiceService.GetAvailableInvoice(_context.Invoices, HttpContext.User, id);
 
             if (invoice == null)
             {
+                // If the invoice in not founded
                 return NotFound();
             }
-
+            // Get available invoice lines from the invoice
             var invoiceLines = _invoiceLineService.GetAvailableInvoiceLines(_context.InvoiceLines, HttpContext.User, id).ToArray();
 
+            // Generate invoice pdf
             var pdf = _invoiceService.GetInvoicePdf(invoice.Enterprise, invoice, invoiceLines);
 
-
+            // Return file in a byte format
             return File(_converter.Convert(pdf), "application/pdf");
         }
 
@@ -69,15 +67,15 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<IEnumerable<Invoice>>> GetInvoices()
         {
-
+            // Use service to get available invoices
             var invoices = await _invoiceService.GetAvailableInvoices(_context.Invoices, HttpContext.User).ToListAsync();
 
             if(invoices != null)
             {
+                // Return all available invoices from the database
                 return invoices;
             }
-
-
+            // Return empty list if result of service is null
             return new List<Invoice>();
         }
 
@@ -86,12 +84,15 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<IEnumerable<Invoice>>> GetEnterpriseInvoices(int id)
         {
+            // Use service to get available invoices from a enterprise
             var invoices = await _invoiceService.GetAvailableEnterpriseInvoices(_context.Invoices, HttpContext.User, id).ToListAsync();
+            
             if (invoices != null)
             {
+                // Return all available invoices from the database
                 return invoices;
             }
-
+            // Return empty list if result of service is null
             return new List<Invoice>();
         }
 
@@ -100,13 +101,15 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<Invoice>> GetInvoice(int id)
         {
+            // Search selected invoice with the id in the database
             var invoice = await _invoiceService.GetAvailableInvoice(_context.Invoices, HttpContext.User, id);
 
             if (invoice == null)
             {
+                // If invoice isn't found send NotFound result
                 return NotFound();
             }
-
+            // Return founded invoice
             return invoice;
         }
 
@@ -116,62 +119,30 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<IActionResult> PutInvoice(int id, InvoiceEditable invoiceData)
         {
-
+            // Create variable to store updated invoice
             Invoice editedInvoice;
-
-            if (invoiceData.Name == null &&
-                invoiceData.EnterpriseId == null &&
-                invoiceData.TaxPercentage == null)
-            {
-                return BadRequest("Faltan datos para modificar la entidad");
-            }
 
             try
             {
+                // Use service to update and store invoice
                 editedInvoice = await _invoiceService.EditInvoice(_context, HttpContext.User, invoiceData, id);
-                if(invoiceData.InvoiceLines?.Count > 0)
-                {
-                    List<InvoiceLine> invoiceLines = await _context.InvoiceLines.Where((InvoiceLine row) => row.InvoiceId == id).ToListAsync();
-
-                    int invoiceLineIndex = 0;
-
-                    foreach(InvoiceLineEditable invoiceLineData in invoiceData.InvoiceLines)
-                    {
-                        if (invoiceLines.Count > invoiceLineIndex)
-                        {
-                            await _invoiceLineService.EditInvoiceLine(_context, HttpContext.User, invoiceLineData, id);
-                        }
-                        else
-                        {
-                            await _invoiceLineService.CreateInvoiceLine(_context, HttpContext.User, invoiceLineData, id);
-                        }
-
-                        invoiceLineIndex++;
-                    }
-                }
             }
             catch (KeyNotFoundException ex)
             {
+                // If key of the invoice is not found return NotFound result
                 return NotFound(ex.Message);
             }
             catch(InvalidOperationException ex)
             {
+                // If not enough data is provided
                 return BadRequest(ex.Message);
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                if (_context.Invoices.Any(e => e.Id == id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    //_logger.LogWarning($"{nameof(UsersController)} - {nameof(PutUser)}:: UNEXPECTED BEHAVIOUR IN FUNCTION CALL");
-
-                    throw ex;
-                }
+                // For any other error from the database throw an exception
+                throw ex;
             }
-
+            // Return data from the updated invoice
             return CreatedAtAction("PutInvoice", new { id = editedInvoice.Id }, editedInvoice);
         }
 
@@ -181,34 +152,30 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<Invoice>> PostInvoice(InvoiceEditable invoiceData)
         {
+            // Create variable to store created invoice
             Invoice createdInvoice;
-
-            if(invoiceData.Name == null &&
-                invoiceData.EnterpriseId == null &&
-                invoiceData.TaxPercentage == null)
-            {
-                return BadRequest("Faltan datos para generar la entidad");
-            }
+            
             try
             {
+                // Use service to create and store invoice
                 createdInvoice = await _invoiceService.CreateInvoice(_context, HttpContext.User, invoiceData);
-                if (invoiceData.InvoiceLines?.Count > 0)
-                {
-                    foreach (InvoiceLineEditable invoiceLineData in invoiceData.InvoiceLines)
-                    {
-                        await _invoiceLineService.CreateInvoiceLine(_context, HttpContext.User, invoiceLineData, createdInvoice.Id);
-                    }
-                }
             }
             catch(KeyNotFoundException ex)
             {
+                // If key of the invoice is not found return NotFound result
                 return BadRequest(ex.Message);
             }
-            catch(DbUpdateConcurrencyException ex)
+            catch (InvalidOperationException ex)
             {
+                // If not enough data is provided
+                return BadRequest(ex.Message);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                // For any other error from the database throw an exception
                 throw ex;
             }
-
+            // Return data from the created invoice
             return CreatedAtAction("PostInvoice", new { id = createdInvoice.Id }, createdInvoice);
         }
 
@@ -217,16 +184,20 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<IActionResult> DeleteInvoice(int id)
         {
+            // Create variable to store deleted invoice
             Invoice deletedInvoice;
+
             try
             {
+                // Use service to obtain deleted invoice and store it
                 deletedInvoice = await _invoiceService.DeleteInvoice(_context, HttpContext.User, id);
             }
             catch(KeyNotFoundException ex)
             {
-                return NotFound();
+                // If the enterprise is not founded
+                return NotFound(ex.Message);
             }
-
+            // Return message to indicate action was successful
             return Ok();
         }
     }
