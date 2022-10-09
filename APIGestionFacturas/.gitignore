@@ -31,7 +31,7 @@ msbuild.err
 msbuild.wrn
 
 # Stored data
-*/invoiceFiles/*
+invoiceFiles/*
 
 # Visual Studio 2015
 .vs/
