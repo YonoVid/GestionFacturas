@@ -50,7 +50,7 @@ export class InvoiceService {
   getInvoicePdf(invoice: number): Observable<any>
   {
     console.log("GET PDF SERVICE");
-    return this.http.get('/api/Invoice/GetInvoicePdf/' + invoice,this.generateOptions(true));
+    return this.http.get<any>('/api/Invoice/GetInvoicePdf/' + invoice,this.generateOptions(true));
   }
 
   generateOptions(isPdf: boolean = false): any
@@ -64,10 +64,10 @@ export class InvoiceService {
           'Access-Control-Allow-Origin':  '*',
           'Access-Control-Allow-Methods': '*',
           'Access-Control-Allow-Headers': '*',
-          responseType : 'blob',
           Accept : 'application/pdf',
           observe : 'response'
-        })
+        }),
+        'responseType' : 'arraybuffer'
       }
     }
     return {

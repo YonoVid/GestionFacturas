@@ -24,10 +24,10 @@ namespace APIGestionFacturas.Controllers
 
         //Initialize services
         public InvoiceController(GestionFacturasContext context,
-                            IInvoiceService invoiceService,
-                            IInvoiceLineService invoiceLineService,
-                            IConverter converter,
-                            JwtSettings jwtSettings)
+                                 IInvoiceService invoiceService,
+                                 IInvoiceLineService invoiceLineService,
+                                 IConverter converter,
+                                 JwtSettings jwtSettings)
         {
             _context = context;
             _invoiceService = invoiceService;
@@ -50,14 +50,34 @@ namespace APIGestionFacturas.Controllers
                 // If the invoice in not founded
                 return NotFound();
             }
-            // Get available invoice lines from the invoice
-            var invoiceLines = _invoiceLineService.GetAvailableInvoiceLines(_context.InvoiceLines, HttpContext.User, id).ToArray();
+            try
+            {
+                // Get invoice enterprise data
+                invoice.Enterprise = await _context.Enterprises.FindAsync(invoice.EnterpriseId);
 
-            // Generate invoice pdf
-            var pdf = _invoiceService.GetInvoicePdf(invoice.Enterprise, invoice, invoiceLines);
+                // Get enterprise user data
+                invoice.Enterprise.User = await _context.Users.FindAsync(invoice.Enterprise.UserId);
 
-            // Return file in a byte format
-            return File(_converter.Convert(pdf), "application/pdf");
+                // Get available invoice lines from the invoice
+                var invoiceLines = _invoiceLineService.GetAvailableInvoiceLines(_context.InvoiceLines, HttpContext.User, id).ToArray();
+
+                // Generate invoice pdf
+                var pdf = _converter.Convert(_invoiceService.GetInvoicePdf(invoice.Enterprise, invoice, invoiceLines));
+
+                FileStream stream = new FileStream((Path.Combine(Directory.GetCurrentDirectory(), "invoiceFiles", invoice.Id + "_invoice.pdf")),
+                                                        FileMode.OpenOrCreate);
+                BinaryWriter writer = new BinaryWriter(stream);
+                writer.Write(pdf, 0, pdf.Length);
+                writer.Close();
+
+                // Return file in a byte format
+                return File(pdf, "application/pdf");
+            }
+            catch(Exception ex)
+            {
+                // Return BadRequest if a error is catched
+                return BadRequest(ex.Message);
+            }
         }
 
         // **** CRUD de la tabla ****

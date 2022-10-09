@@ -1,0 +1,30 @@
+:host ::ng-deep{
+    height: 100%;
+}
+
+
+#pdf-iframe
+{
+    flex: auto;
+    margin: 0;
+    padding: 0;
+    flex-grow: 1;
+}
+
+.pdf-dialog
+{
+    background-color: aquamarine;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.mat-dialog-container
+{
+    padding: 0;
+    margin: 0;
+}

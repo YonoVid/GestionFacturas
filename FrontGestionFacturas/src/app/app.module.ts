@@ -10,12 +10,14 @@ import { MaterialModule } from './modules/material/material.module';
 import { AuthFormsModule } from './modules/auth-forms/auth-forms.module';
 import { HttpClientModule } from '@angular/common/http';
 import { InvoicePdfComponent } from './modules/pages/home/invoice-pdf/invoice-pdf.component';
+import { SafePipe } from './pipes/safe.pipe';
 
 @NgModule({
   declarations: [
     AppComponent,
     NavComponent,
     InvoicePdfComponent,
+    SafePipe,
   ],
   imports: [
     BrowserModule,

@@ -180,8 +180,16 @@ namespace APIGestionFacturas.Services
             return invoice;
         }
 
+        /// <summary>
+        /// Generates a html document with the related data to create a pdf
+        /// </summary>
+        /// <param name="enterprise"> Enterprise data to include in the document </param>
+        /// <param name="invoice"> Invoice data to generate the document </param>
+        /// <param name="invoiceLines"> Invoice lines to include in the document </param>
+        /// <returns> HTMLToPdfDocument with a invoice document in html format </returns>
         public HtmlToPdfDocument GetInvoicePdf(Enterprise enterprise, Invoice invoice, InvoiceLine[] invoiceLines)
         {
+            // Set global settings of the pdf
             var globalSetting = new GlobalSettings
             {
                 ColorMode = ColorMode.Color,
@@ -189,29 +197,32 @@ namespace APIGestionFacturas.Services
                 PaperSize = PaperKind.A4,
                 Margins = new MarginSettings { Top = 10 },
                 DocumentTitle = "Factura-" + invoice.Id,
-                Out = Path.Combine(Directory.GetCurrentDirectory(),
-                                   "invoiceFiles",
-                                   invoice.Id + "_invoice.pdf")
+                DPI = 96
             };
-
+            // Set settings of the document to turn into a pdf
             var objectSettings = new ObjectSettings
             {
                 PagesCount = true,
                 HtmlContent = TemplateGenerator.GetHTMLString(enterprise, invoice, invoiceLines),
-                WebSettings = { DefaultEncoding = "utf-8", 
-                                UserStyleSheet = Path.Combine(Directory.GetCurrentDirectory(),
-                                                              "assets",
-                                                              "style.css")},
+                WebSettings = { 
+                    DefaultEncoding = "utf-8", 
+                    UserStyleSheet = Path.Combine(Directory.GetCurrentDirectory(),
+                                                  "assets",
+                                                  "style.css"),
+                    PrintMediaType = true, // <=== Tells wkhtml to use print media
+                    EnableIntelligentShrinking = false,
+                },
                 HeaderSettings = { FontName = "Arial",
                                    FontSize = 9,
                                    Right = "Página [page]/[toPage]",
                                    Line = true},
                 FooterSettings  = { FontName = "Arial",
-                                   FontSize = 9,
-                                   Line = true,
-                                   Center = "Reporte de factura"}
+                                    FontSize = 9,
+                                    Line = true,
+                                    Center = "Reporte de factura"}
             };
 
+            //Return document
             return new HtmlToPdfDocument
             {
                 GlobalSettings = globalSetting,

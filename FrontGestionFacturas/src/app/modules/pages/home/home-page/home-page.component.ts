@@ -167,10 +167,12 @@ export class HomePageComponent implements OnInit {
     this.invoiceService.getInvoicePdf(id).subscribe({
       next:(response) => 
       {
+        let file = new Blob([response], { type: 'application/pdf' });     
+        var fileURL = URL.createObjectURL(file);
         this.dialog.open(InvoicePdfComponent, {
           data:
           {
-            pdf: response
+            pdf: fileURL
           }
         });
       },

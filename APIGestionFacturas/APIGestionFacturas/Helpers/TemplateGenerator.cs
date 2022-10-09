@@ -20,61 +20,58 @@ namespace APIGestionFacturas.Helpers
         {
             var sb = new StringBuilder();
 
-            sb.Append(@"
+            sb.AppendFormat(@"
             <html>
               <head></head>
               <body>
                 <div class='invoice-box'>
                   <table>
                     <tr class='top'>
-                      <td colspan='2'>
+                      <td colspan='4'>
                         <table>
                           <tr>
-                            <td class='title'>
-                              <img src = './images/logo.png' alt='Company logo' style='width: 100%; max-width: 300px' />
+                            <td class='title' colspan='4'>
+                              <img src = './images/logo.png' alt='FACTURA' style='width: 100%; max-width: 300px' />
 							</td>
-                            <td>
-						      Invoice #: 123<br />
-						      Created: January 1, 2015<br />
-						      Due: February 1, 2015
-						    </td>
 					      </tr>
 					    </table>
 				      </td>
 				    </tr>
                     <tr class='information'>
-                      <td colspan = '2'>
+                      <td colspan = '4'>
                         <table>
                           <tr>
                             <td>
-                              Sparksuite, Inc.<br />
-                              12345 Sunny Road <br />
-                              Sunnyville, TX 12345
-                            </td>
+						      <strong>Factura #:</strong> {0} <br />
+						      <strong>Creado:</strong> {1} <br />
+						      <strong>Emitido:</strong> {2}
+						    </td>
+                            <td colspan='2'></td>
                             <td>
-                              Acme Corp.<br />
-                              John Doe <br />
-                              john@example.com
+                              {3}<br />
+                              {4}<br />
+                              {5}
                             </td>
                           </tr>
                         </table>
                       </td>
                     </tr>
                     <tr class='heading'>
-                      <td> Payment Method </td>
-                      <td> Check #</td>
-				    </tr>
-                    <tr class='details'>
-					  <td>Check</td>
-					  <td>1000</td>
-				    </tr>
-                    <tr class='heading'>
                       <td> Cantidad </td>
                       <td> Descripción </td>
                       <td> Valor </td>
                       <td> Subtotal </td>
                     </tr>
-            ");
+            ",
+            invoice.Id,
+            invoice.CreatedDate.ToShortDateString(),
+            DateTime.Now.ToShortDateString(),
+            enterprise.Name,
+            enterprise.User?.Name,
+            enterprise.User?.Email
+            );
+
+            float total = 0;
 
             foreach (var invoiceLine in invoiceLines)
             {
@@ -85,22 +82,43 @@ namespace APIGestionFacturas.Helpers
                         <td > {2} </td>
                         <td> {3} </td>
                       </tr>
-                ", 
+                    ", 
                     invoiceLine.Quantity,
                     invoiceLine.Item,
-                    invoiceLine.ItemValue,
-                    invoiceLine.ItemValue * invoiceLine.Quantity
+                    invoiceLine.ItemValue.ToString(".00"),
+                    (invoiceLine.ItemValue * invoiceLine.Quantity).ToString(".00")
                 );
+                total += invoiceLine.Quantity * invoiceLine.ItemValue;
             }
 
+            float taxes = total * invoice.TaxPercentage / 100;
 
-            sb.Append(@"
+            sb.AppendFormat(@"
+                      <tr class='total'>
+                        <td colspan='2'> </td>
+                        <td> Subtotal </td>
+                        <td> {0} </td>
+                      </tr>
+                      <tr class='total'>
+                        <td colspan='2'> </td>
+                        <td> Impuestos {1}% </td>
+                        <td> {2} </td>
+                      </tr>
+                      <tr class='total'>
+                        <td colspan='2'> </td>
+                        <td> Total </td>
+                        <td><h4> ${3} </h4></td>
+                      </tr>
                    </table>
                  </div>
                </body>
              </html>
-
-            ");
+            ",
+                total.ToString(".00"),
+                invoice.TaxPercentage,
+                taxes.ToString(".00"),
+                (total + taxes).ToString(".00")
+            );
 
             return sb.ToString();
         }
