@@ -14,25 +14,7 @@ export class InvoicePdfComponent implements OnInit {
               public dialogRef: MatDialogRef<any>) { }
 
   ngOnInit( ): void {
+    // Update modal dialog size
     this.dialogRef.updateSize('80%', '80%');
   }
-
-  onLoadPdf(ev: Event) {
-    let iframe = document.getElementById("pdf-iframe");
-    //let content = (<HTMLIFrameElement> iframe).contentWindow;
-
-    let content = document.parentElement;
-    if(iframe != undefined && content != null)
-    {
-      document.parentElement?.clientHeight;
-      let max = Math.max(content.clientHeight,
-                         content.offsetHeight,
-                         content.scrollHeight
-                         )
-      iframe.style.height = max + 'px';
-      console.log(iframe.style.height);
-    }
-    
-  }
-
 }

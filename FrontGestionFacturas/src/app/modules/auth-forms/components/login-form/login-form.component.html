@@ -6,6 +6,7 @@
         Accede a tu cuenta
     </mat-card-subtitle>
     <form #formDirective ="ngForm" [formGroup]="loginForm" (submit)="submitForm(formDirective)">
+        <!-- Email input field -->
         <mat-form-field>
             <input matInput type="email" placeholder="Email" formControlName="email" maxlength="50">
             <mat-error *ngIf="formEmail?.errors?.['email'] && formEmail?.touched">
@@ -15,16 +16,18 @@
                 Debes ingresar tu correo
             </mat-error>
         </mat-form-field>
+        <!-- Password input field-->
         <mat-form-field>
             <input matInput type="password" placeholder="Contraseña" formControlName="password" maxlength="40">
             <mat-error *ngIf="formPassword?.errors?.['required'] && formPassword?.touched">
                 Debes ingresar tu contraseña
             </mat-error>
         </mat-form-field>
+        <!-- Link to redirect to register page -->
         <mat-card-actions>
             <a [routerLink]="[registerPage]">¿No tienes una cuenta? Registrate aquí!</a>
         </mat-card-actions>
-        <!-- Disabled if form is invalid-->
+        <!-- Submit button, disabled if form is invalid -->
         <button type="submit" mat-raised-button color="primary" [disabled] = "loginForm.invalid">
             LOGIN
         </button>

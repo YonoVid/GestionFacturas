@@ -20,6 +20,7 @@ import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
     FormsModule,
     ReactiveFormsModule
   ],
+  // Declaration to allow use of date pipe
   providers: [DatePipe]
 })
 export class HomeModule { }

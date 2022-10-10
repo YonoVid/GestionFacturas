@@ -1,10 +1,10 @@
 <div mat-dialog-content class="pdf-dialog">
+    <!-- Component to render pdf -->
     <iframe id="pdf-iframe"
             class="pdf-reader"
             [src]="(data.pdf + '#navpanes=0')| safe"
             width="100%"
             frameborder="0"
-            scrolling="no"
-            (load)="onLoadPdf($event)">
+            scrolling="no">
     </iframe>
 </div>

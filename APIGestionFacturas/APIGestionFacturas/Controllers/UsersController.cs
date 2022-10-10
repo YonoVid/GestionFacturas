@@ -69,8 +69,7 @@ namespace APIGestionFacturas.Controllers
             }
             catch (Exception ex)
             {
-
-                throw new Exception("GetToken error", ex);
+                return NotFound("GetToken error " + ex.Message);
             }
         }
 

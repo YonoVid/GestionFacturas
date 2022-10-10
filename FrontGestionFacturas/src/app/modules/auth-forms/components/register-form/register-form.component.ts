@@ -15,26 +15,30 @@ export class RegisterFormComponent implements OnInit {
   constructor(private formBuilder: FormBuilder) { }
 
   ngOnInit(): void {
+    // Init of form
     this.registerForm = this.formBuilder.group({
       name: ['', Validators.compose([Validators.maxLength(30), Validators.required])],
       email : ['', Validators.compose([Validators.email, Validators.required])],
       password: ['', Validators.compose([Validators.maxLength(30), Validators.required])]
     });
   }
-
+  // Get the values of the form
   get formName() {return this.registerForm.get('name')}
   get formEmail() {return this.registerForm.get('email')}
   get formPassword() {return this.registerForm.get('password')}
-
+  /**
+   * Emits the data of the form with a event.
+   * @param formDirective The reference of the form to be submited.
+   */
   submitForm(formDirective: FormGroupDirective)
   {
-    //Se verifica que el formulario sea válido
+    // Check if the form is valid
     if(this.registerForm.valid)
     {
-      //Se emiten valores del formulario
+      // Values of the form are emitted
       this.onSubmit.emit(this.registerForm.value);
       
-      //Se reinicia formulario
+      // Form is reseted
       formDirective.resetForm();
       this.registerForm.reset();
     }

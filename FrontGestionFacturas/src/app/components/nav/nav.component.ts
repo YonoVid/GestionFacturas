@@ -3,6 +3,7 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Observable } from 'rxjs';
 import { map, shareReplay } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { MatSidenav } from '@angular/material/sidenav';
 
 @Component({
   selector: 'app-nav',
@@ -12,6 +13,7 @@ import { Router } from '@angular/router';
 export class NavComponent implements OnInit {
 
   token: string | null = null;
+  isOpen: boolean = false;
 
   isHandset$: Observable<boolean> = this.breakpointObserver.observe(Breakpoints.Handset)
     .pipe(
@@ -24,11 +26,27 @@ export class NavComponent implements OnInit {
 
   ngOnInit(): void
   {
-    this.token = sessionStorage.getItem("token");
+  }
+  /**
+   * Toggle the drawer menú
+   */
+  toggleDrawer()
+  {
+    this.isOpen = !this.isOpen;
+  }
+
+  haveToken(): boolean
+  {
+    if(sessionStorage.getItem("token") === null)
+    {
+      return false;
+    }
+    return true;
   }
 
   logout()
   {
+    this.isOpen = false;
     sessionStorage.clear();
     this.router.navigate(['/auth']);
   }

@@ -19,8 +19,12 @@ const routes: Routes = [
     loadChildren: () => import('./modules/pages/auth/auth.module').then(m => m.AuthModule)
   },
   {
-    path:'**',
+    path:'notFound',
     loadChildren: () => import('./modules/pages/not-found/not-found.module').then(m => m.NotFoundModule)
+  },
+  {
+    path:'**',
+    redirectTo: 'notFound'
   }
 ];
 

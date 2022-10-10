@@ -9,7 +9,12 @@ import { IUserAuth } from '../models/interfaces/user-auth.interface';
 export class AuthService {
 
   constructor(private http: HttpClient) { }
-
+  /**
+  * Make a POST request to external API to get login JWT token
+  * @param email User email
+  * @param password User password
+  * @returns Observable to use the response of the HTTP petition
+  */
   login(email: string, password: string): Observable<any>
   {
     let options = {
@@ -25,7 +30,13 @@ export class AuthService {
     }
     return this.http.post('/api/Users/Login', body, options)
   }
-
+  /**
+   * Make a POST request  to external API to register a new user
+   * @param name User name
+   * @param email User email
+   * @param password User password
+   * @returns Observable to use the response of the HTTP petition
+   */
   register(name: string, email: string, password: string): Observable<any>
   {
     let body: IUserAuth = {

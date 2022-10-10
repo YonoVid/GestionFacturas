@@ -23,6 +23,7 @@ import { MatPaginatorModule } from '@angular/material/paginator';
     CommonModule
   ],
   exports: [
+    // Import of material modules used in the project
     MatInputModule,
     MatFormFieldModule,
     MatCardModule,

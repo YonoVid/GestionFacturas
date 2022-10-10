@@ -1,11 +1,11 @@
 <mat-sidenav-container class="sidenav-container">
-  <mat-sidenav #drawer [class.is-hidden]="token == null" class="sidenav" fixedInViewport
+  <mat-sidenav #drawer [class.is-hidden]="!haveToken()" class="sidenav" fixedInViewport
       [attr.role]="(isHandset$ | async) ? 'dialog' : 'navigation'"
       [mode]="(isHandset$ | async) ? 'over' : 'side'"
-      [opened]="(isHandset$ | async) === false">
+      [opened]="isOpen">
     <mat-toolbar>Menu</mat-toolbar>
     <mat-nav-list>
-      <a mat-list-item routerLink="home">Home</a>
+      <a mat-list-item routerLink="/home">Home</a>
       <a mat-list-item (click)="logout()">Logout</a>
     </mat-nav-list>
   </mat-sidenav>
@@ -15,11 +15,11 @@
         type="button"
         aria-label="Toggle sidenav"
         mat-icon-button
-        (click)="drawer.toggle()"
-        *ngIf="isHandset$ | async">
+        (click)="toggleDrawer()"
+        *ngIf="haveToken()">
         <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
       </button>
-      <span>FrontGestionFacturas</span>
+      <span style="padding-left: 1em;">FrontGestionFacturas</span>
     </mat-toolbar>
     <!-- Add Content Here -->
     <div class="router-content">

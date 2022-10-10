@@ -13,14 +13,15 @@ import { RouterModule } from '@angular/router';
   ],
   imports: [
     CommonModule,
-    //Importación de módulos para formularios
+    // Import of modules for forms
     FormsModule,
     ReactiveFormsModule,
     MaterialModule,
-    //Importación de módulo para reedirección de router
+    // Import of modules to redirect
     RouterModule
   ],
   exports: [
+    // Export component of forms
     LoginFormComponent,
     RegisterFormComponent
   ]

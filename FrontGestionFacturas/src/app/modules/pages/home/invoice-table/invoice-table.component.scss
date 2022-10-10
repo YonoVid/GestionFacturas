@@ -31,3 +31,9 @@ mat-card
 {
     max-width: 12em;
 }
+
+.subtotal-table td:nth-child(1)
+{
+    color: "primary";
+    background-color: #eee;
+}
