@@ -8,8 +8,25 @@ namespace APIGestionFacturas.Services
 {
     public class InvoiceLineService: IInvoiceLineService
     {
-        public IQueryable<InvoiceLine>? GetAvailableInvoiceLines(IQueryable<InvoiceLine> invoiceLines, ClaimsPrincipal userClaims)
+        private readonly GestionFacturasContext _context;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public InvoiceLineService(GestionFacturasContext context,
+                                 IHttpContextAccessor httpContextAccessor)
         {
+            _context = context;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        public IQueryable<InvoiceLine>? GetAvailableInvoiceLines()
+        {
+            if (_context.InvoiceLines == null)
+            {
+                // Throw error if reference to database is null
+                throw new NullReferenceException("Referencia a base de datos en nula");
+            }
+            // Get user claims
+            var userClaims = getUserClaims();
+
             // Check if user is 'Administrator'
             if (!userClaims.IsInRole("Administrator"))
             {
@@ -19,20 +36,28 @@ namespace APIGestionFacturas.Services
                 {
                     // Return all invoices with a enterprise managed by the user
                     var tokenId = identity?.FindFirst("Id")?.Value;
-                    return invoiceLines.Where((invoiceLine) => 
+                    return _context.InvoiceLines.Where((invoiceLine) => 
                         invoiceLine.Invoice.Enterprise.UserId.ToString() == tokenId
                     );
                 }
                 return null;
             }
             // Return obtained invoice lines, may be null
-            return invoiceLines;
+            return _context.InvoiceLines;
         }
 
-        public async Task<InvoiceLine?> GetAvailableInvoiceLine(DbSet<InvoiceLine> invoiceLines, ClaimsPrincipal userClaims, int id)
+        public async Task<InvoiceLine?> GetAvailableInvoiceLine(int id)
         {
+            if (_context.InvoiceLines == null)
+            {
+                // Throw error if reference to database is null
+                throw new NullReferenceException("Referencia a base de datos en nula");
+            }
+            // Get user claims
+            var userClaims = getUserClaims();
+
             // Search for the indicated invoice line
-            InvoiceLine? result = await invoiceLines.FindAsync(id);
+            InvoiceLine? result = await _context.InvoiceLines.FindAsync(id);
 
             // Check if user is 'Administrator'
             if (!userClaims.IsInRole("Administrator") && result != null)
@@ -49,15 +74,21 @@ namespace APIGestionFacturas.Services
             return result;
         }
 
-        public IQueryable<InvoiceLine> GetAvailableInvoiceLines(IQueryable<InvoiceLine> invoiceLines,
-                                                                ClaimsPrincipal userClaims,
-                                                                int InvoiceId)
+        public IQueryable<InvoiceLine> GetAvailableInvoiceLines(int InvoiceId)
         {
+            if (_context.InvoiceLines == null)
+            {
+                // Throw error if reference to database is null
+                throw new NullReferenceException("Referencia a base de datos en nula");
+            }
+            // Get user claims
+            var userClaims = getUserClaims();
+
             // Check if user is 'Administrator'
             if (!userClaims.IsInRole("Administrator"))
             {
                 // Get all the invoice lines from the invoice selected
-                var filteredInvoiceLines = invoiceLines.Where((invoiceLine) => invoiceLine.Invoice.Id == InvoiceId);
+                var filteredInvoiceLines = _context.InvoiceLines.Where((invoiceLine) => invoiceLine.Invoice.Id == InvoiceId);
                 
                 // Check if user identity is not null
                 var identity = userClaims.Identity as ClaimsIdentity;
@@ -75,14 +106,18 @@ namespace APIGestionFacturas.Services
                 return null;
             }
             // If user is 'Administrator' return all invoice lines from the invoice
-            return invoiceLines.Where((invoiceLine) => invoiceLine.Invoice.Id == InvoiceId);
+            return _context.InvoiceLines.Where((invoiceLine) => invoiceLine.Invoice.Id == InvoiceId);
         }
 
-        public async Task<InvoiceLine> CreateInvoiceLine(GestionFacturasContext _context,
-                                                         ClaimsPrincipal userClaims,
-                                                         InvoiceLineEditable invoiceLineData,
+        public async Task<InvoiceLine> CreateInvoiceLine(InvoiceLineEditable invoiceLineData,
                                                          int invoiceId)
         {
+            if (_context.InvoiceLines == null)
+            {
+                // Throw error if reference to database is null
+                throw new NullReferenceException("Referencia a base de datos en nula");
+            }
+
             if (invoiceLineData.Item == null ||
                 invoiceLineData.Quantity == null ||
                 invoiceLineData.ItemValue == null ||
@@ -91,6 +126,9 @@ namespace APIGestionFacturas.Services
                 // Throw error if not enough data is provided
                 throw new InvalidOperationException("Faltan datos para generar la entidad");
             }
+            // Get user claims
+            var userClaims = getUserClaims();
+
             // Create new invoice line from data provided
             var invoiceLine = new InvoiceLine(invoiceLineData);
 
@@ -122,11 +160,16 @@ namespace APIGestionFacturas.Services
             return invoiceLine;
         }
 
-        public async Task<InvoiceLine> EditInvoiceLine(GestionFacturasContext _context,
-                                                       ClaimsPrincipal userClaims,
-                                                       InvoiceLineEditable invoiceLineData,
+        public async Task<InvoiceLine> EditInvoiceLine(InvoiceLineEditable invoiceLineData,
                                                        int invoiceLineId)
         {
+            if (_context.InvoiceLines == null ||
+                _context.Invoices == null)
+            {
+                // Throw error if reference to database is null
+                throw new NullReferenceException("Referencia a base de datos en nula");
+            }
+
             if (invoiceLineData.Item == null &&
                invoiceLineData.Quantity == null &&
                invoiceLineData.ItemValue == null)
@@ -134,8 +177,11 @@ namespace APIGestionFacturas.Services
                 // Throw error if not enough data is provided
                 throw new InvalidOperationException("No hay suficientes datos para modificar la entidad");
             }
+            // Get user claims
+            var userClaims = getUserClaims();
+
             // Search the requested invoice line
-            InvoiceLine? invoiceLine = await GetAvailableInvoiceLine(_context.InvoiceLines, userClaims, invoiceLineId);
+            InvoiceLine? invoiceLine = await GetAvailableInvoiceLine(invoiceLineId);
 
             if (invoiceLine == null)
             {
@@ -145,7 +191,9 @@ namespace APIGestionFacturas.Services
 
             // Modify item if is in data
             if (invoiceLineData.Item != null) { invoiceLine.Item = invoiceLineData.Item; }
-            if (invoiceLineData.ItemValue != null || invoiceLineData.Quantity != null)
+            if (invoiceLineData.ItemValue != null ||
+                invoiceLineData.Quantity != null ||
+                invoiceLineData.InvoiceId != null)
             {
                 // Search the invoice asociated 
                 Invoice? invoice = await _context.Invoices.FindAsync(invoiceLine.InvoiceId);
@@ -160,9 +208,33 @@ namespace APIGestionFacturas.Services
                 // Check if invoice is null
                 if (invoice != null)
                 {
+                    // If related invoice should be changed
+                    if(invoiceLineData.InvoiceId != null)
+                    {
+                        // Search the new invoice asociated 
+                        Invoice? newInvoice = await _context.Invoices.FindAsync(invoiceLineData.InvoiceId);
+
+                        if(newInvoice == null)
+                        {
+                            // Throw error if no valid invoice was found
+                            throw new KeyNotFoundException("Nueva factura no encontrada");
+                        }
+                        
+                        // Add new amount to invoice
+                        newInvoice.TotalAmount += invoiceLine.Quantity * invoiceLine.ItemValue;
+
+                        // Updated data of the new related invoice to updation
+                        newInvoice.UpdatedBy = userClaims.Identity.Name;
+                        newInvoice.UpdatedDate = DateTime.Now;
+                        _context.Invoices.Update(newInvoice);
+                    }
+                    else
+                    {
+                        // Add new amount to invoice related
+                        invoice.TotalAmount += invoiceLine.Quantity * invoiceLine.ItemValue;
+                    }
                     // Update total amount from invoice
                     invoice.TotalAmount -= oldValue;
-                    invoice.TotalAmount += invoiceLine.Quantity * invoiceLine.ItemValue;
 
                     // Updated data of the invoice related to updation
                     invoice.UpdatedBy = userClaims.Identity.Name;
@@ -180,12 +252,18 @@ namespace APIGestionFacturas.Services
             return invoiceLine;
         }
 
-        public async Task<InvoiceLine> DeleteInvoiceLine(GestionFacturasContext _context,
-                                                         ClaimsPrincipal userClaims,
-                                                         int invoiceLineId)
+        public async Task<InvoiceLine> DeleteInvoiceLine(int invoiceLineId)
         {
+            if (_context.InvoiceLines == null || _context.Invoices == null)
+            {
+                // Throw error if reference to database is null
+                throw new NullReferenceException("Referencia a base de datos en nula");
+            }
+            // Get user claims
+            var userClaims = getUserClaims();
+
             // Search the requested invoice line
-            var invoiceLine = await GetAvailableInvoiceLine(_context.InvoiceLines, userClaims, invoiceLineId);
+            var invoiceLine = await GetAvailableInvoiceLine(invoiceLineId);
 
             if (invoiceLine == null)
             {
@@ -212,6 +290,13 @@ namespace APIGestionFacturas.Services
 
             // Return deleted invoice line data
             return invoiceLine;
+        }
+        ClaimsPrincipal getUserClaims()
+        {
+            var userClaims = _httpContextAccessor?.HttpContext?.User;
+            if (userClaims == null) { throw new BadHttpRequestException("Datos de usuario que realiza la solicitud no encontrados"); }
+
+            return userClaims;
         }
     }
 }

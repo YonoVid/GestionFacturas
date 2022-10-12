@@ -16,20 +16,17 @@ namespace APIGestionFacturas.Controllers
     [ApiController]
     public class InvoiceController : ControllerBase
     {
-        private readonly GestionFacturasContext _context;
         private readonly IInvoiceService _invoiceService;
         private readonly IInvoiceLineService _invoiceLineService;
         private readonly IConverter _converter;
         private readonly JwtSettings _jwtSettings;                 
 
         //Initialize services
-        public InvoiceController(GestionFacturasContext context,
-                                 IInvoiceService invoiceService,
+        public InvoiceController(IInvoiceService invoiceService,
                                  IInvoiceLineService invoiceLineService,
                                  IConverter converter,
                                  JwtSettings jwtSettings)
         {
-            _context = context;
             _invoiceService = invoiceService;
             _invoiceLineService = invoiceLineService;
             _converter = converter;
@@ -43,7 +40,7 @@ namespace APIGestionFacturas.Controllers
         public async Task<ActionResult> GetInvoicePdf(int id)
         {
             // User serviec to get the requested id
-            var invoice = await _invoiceService.GetAvailableInvoice(_context.Invoices, HttpContext.User, id);
+            var invoice = await _invoiceService.GetAvailableInvoice(id);
 
             if (invoice == null)
             {
@@ -52,17 +49,8 @@ namespace APIGestionFacturas.Controllers
             }
             try
             {
-                // Get invoice enterprise data
-                invoice.Enterprise = await _context.Enterprises.FindAsync(invoice.EnterpriseId);
-
-                // Get enterprise user data
-                invoice.Enterprise.User = await _context.Users.FindAsync(invoice.Enterprise.UserId);
-
-                // Get available invoice lines from the invoice
-                var invoiceLines = _invoiceLineService.GetAvailableInvoiceLines(_context.InvoiceLines, HttpContext.User, id).ToArray();
-
                 // Generate invoice pdf
-                var pdf = _converter.Convert(_invoiceService.GetInvoicePdf(invoice.Enterprise, invoice, invoiceLines));
+                var pdf = _converter.Convert(await _invoiceService.GetInvoicePdf(id));
 
                 FileStream stream = new FileStream((Path.Combine(Directory.GetCurrentDirectory(), "invoiceFiles", invoice.Id + "_invoice.pdf")),
                                                         FileMode.OpenOrCreate);
@@ -88,12 +76,12 @@ namespace APIGestionFacturas.Controllers
         public async Task<ActionResult<IEnumerable<Invoice>>> GetInvoices()
         {
             // Use service to get available invoices
-            var invoices = await _invoiceService.GetAvailableInvoices(_context.Invoices, HttpContext.User).ToListAsync();
+            var invoices = _invoiceService.GetAvailableInvoices();
 
             if(invoices != null)
             {
                 // Return all available invoices from the database
-                return invoices;
+                return await invoices.ToListAsync();
             }
             // Return empty list if result of service is null
             return new List<Invoice>();
@@ -105,12 +93,12 @@ namespace APIGestionFacturas.Controllers
         public async Task<ActionResult<IEnumerable<Invoice>>> GetEnterpriseInvoices(int id)
         {
             // Use service to get available invoices from a enterprise
-            var invoices = await _invoiceService.GetAvailableEnterpriseInvoices(_context.Invoices, HttpContext.User, id).ToListAsync();
+            var invoices = _invoiceService.GetAvailableEnterpriseInvoices(id);
             
             if (invoices != null)
             {
                 // Return all available invoices from the database
-                return invoices;
+                return await invoices.ToListAsync();
             }
             // Return empty list if result of service is null
             return new List<Invoice>();
@@ -122,7 +110,7 @@ namespace APIGestionFacturas.Controllers
         public async Task<ActionResult<Invoice>> GetInvoice(int id)
         {
             // Search selected invoice with the id in the database
-            var invoice = await _invoiceService.GetAvailableInvoice(_context.Invoices, HttpContext.User, id);
+            var invoice = await _invoiceService.GetAvailableInvoice(id);
 
             if (invoice == null)
             {
@@ -145,7 +133,7 @@ namespace APIGestionFacturas.Controllers
             try
             {
                 // Use service to update and store invoice
-                editedInvoice = await _invoiceService.EditInvoice(_context, HttpContext.User, invoiceData, id);
+                editedInvoice = await _invoiceService.EditInvoice(invoiceData, id);
             }
             catch (KeyNotFoundException ex)
             {
@@ -156,6 +144,11 @@ namespace APIGestionFacturas.Controllers
             {
                 // If not enough data is provided
                 return BadRequest(ex.Message);
+            }
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -178,7 +171,7 @@ namespace APIGestionFacturas.Controllers
             try
             {
                 // Use service to create and store invoice
-                createdInvoice = await _invoiceService.CreateInvoice(_context, HttpContext.User, invoiceData);
+                createdInvoice = await _invoiceService.CreateInvoice(invoiceData);
             }
             catch(KeyNotFoundException ex)
             {
@@ -189,6 +182,11 @@ namespace APIGestionFacturas.Controllers
             {
                 // If not enough data is provided
                 return BadRequest(ex.Message);
+            }
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -210,12 +208,17 @@ namespace APIGestionFacturas.Controllers
             try
             {
                 // Use service to obtain deleted invoice and store it
-                deletedInvoice = await _invoiceService.DeleteInvoice(_context, HttpContext.User, id);
+                deletedInvoice = await _invoiceService.DeleteInvoice(id);
             }
             catch(KeyNotFoundException ex)
             {
                 // If the enterprise is not founded
                 return NotFound(ex.Message);
+            }
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
             }
             // Return message to indicate action was successful
             return Ok();

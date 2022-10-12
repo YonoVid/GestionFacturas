@@ -5,7 +5,9 @@ VisualStudioVersion = 17.2.32616.157
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GestionFacturasModelo", "GestionFacturasModelo\GestionFacturasModelo.csproj", "{28DBDCFB-8683-4769-A84D-D1DBC6121ACA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "APIGestionFacturas", "APIGestionFacturas\APIGestionFacturas.csproj", "{BB7D47D1-0B07-4CB8-8392-DB158C67272E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "APIGestionFacturas", "APIGestionFacturas\APIGestionFacturas.csproj", "{BB7D47D1-0B07-4CB8-8392-DB158C67272E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "APIGestionFacturas.Tests", "APIGestionFacturas.Tests\APIGestionFacturas.Tests.csproj", "{40720F89-92FE-43C8-ADE7-DEC83F8ED328}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{BB7D47D1-0B07-4CB8-8392-DB158C67272E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BB7D47D1-0B07-4CB8-8392-DB158C67272E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BB7D47D1-0B07-4CB8-8392-DB158C67272E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40720F89-92FE-43C8-ADE7-DEC83F8ED328}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40720F89-92FE-43C8-ADE7-DEC83F8ED328}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40720F89-92FE-43C8-ADE7-DEC83F8ED328}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40720F89-92FE-43C8-ADE7-DEC83F8ED328}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

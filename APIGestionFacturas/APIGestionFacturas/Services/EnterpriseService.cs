@@ -8,8 +8,25 @@ namespace APIGestionFacturas.Services
 {
     public class EnterpriseService : IEnterpriseService
     {
-        public IQueryable<Enterprise>? GetAvailableEnterprises(IQueryable<Enterprise> enterprises, ClaimsPrincipal userClaims)
+        private readonly GestionFacturasContext _context;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public EnterpriseService(GestionFacturasContext context,
+                                 IHttpContextAccessor httpContextAccessor)
         {
+            _context = context;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        public IQueryable<Enterprise>? GetAvailableEnterprises()
+        {
+            if (_context.Enterprises == null)
+            {
+                // Throw error if reference to database is null
+                throw new NullReferenceException("Referencia a base de datos en nula");
+            }
+            // Get user claims
+            var userClaims = getUserClaims();
+
             // Check if user is 'Administrator'
             if (!userClaims.IsInRole("Administrator"))
             {
@@ -19,18 +36,26 @@ namespace APIGestionFacturas.Services
                 {
                    // Return all invoices with a enterprise managed by the user
                    var id = identity?.FindFirst("Id")?.Value;
-                   return enterprises.Where((enterprise) => enterprise.User.Id.ToString() == id &&
+                   return _context.Enterprises.Where((enterprise) => enterprise.User.Id.ToString() == id &&
                                                             !enterprise.IsDeleted);
                 }
                 return null;
             }
             // Return obtained enteprises, may be null
-            return enterprises;
+            return _context.Enterprises;
         }
-        public async Task<Enterprise?> GetAvailableEnterprise(DbSet<Enterprise> enterprises, ClaimsPrincipal userClaims, int id)
+        public async Task<Enterprise?> GetAvailableEnterprise(int id)
         {
+            if (_context.Enterprises == null)
+            {
+                // Throw error if reference to database is null
+                throw new NullReferenceException("Referencia a base de datos en nula");
+            }
+            // Get user claims
+            var userClaims = getUserClaims();
+
             // Search for the indicated enterprise
-            Enterprise? result = await enterprises.FindAsync(id);
+            Enterprise? result = await _context.Enterprises.FindAsync(id);
 
             // Check if user is 'Administrator'
             if (!userClaims.IsInRole("Administrator") && result != null)
@@ -47,15 +72,21 @@ namespace APIGestionFacturas.Services
             return result;
         }
 
-        public async Task<Enterprise> CreateEnterprise(GestionFacturasContext _context,
-                                              ClaimsPrincipal userClaims,
-                                              EnterpriseEditable enterpriseData)
+        public async Task<Enterprise> CreateEnterprise(EnterpriseEditable enterpriseData)
         {
+            if (_context.Enterprises == null || _context.Users == null)
+            {
+                // Throw error if reference to database is null
+                throw new NullReferenceException("Referencia a base de datos en nula");
+            }
+
             if (enterpriseData.Name == null)
             {
                 // Throw error if not enough data is provided
                 throw new InvalidOperationException("Faltan datos para generar la entidad"); 
             }
+            // Get user claims
+            var userClaims = getUserClaims();
 
             // Create new enterprise from the provided data
             var enterprise = new Enterprise(enterpriseData);
@@ -68,7 +99,7 @@ namespace APIGestionFacturas.Services
                 if (enterprise.User == null) { throw new KeyNotFoundException("Id de usuario no encontrado"); }
             }
             // Updated related data of the creation
-            enterprise.CreatedBy = userClaims.Identity.Name;
+            enterprise.CreatedBy = userClaims.Identity?.Name!;
 
             // Add the enterprise to the database and save the changes
             // Generated invoice data is updated with genereated id
@@ -80,11 +111,17 @@ namespace APIGestionFacturas.Services
         }
 
 
-        public async Task<Enterprise> EditEnterprise(GestionFacturasContext _context,
-                                            ClaimsPrincipal userClaims,
-                                            EnterpriseEditable enterpriseData,
-                                            int enterpriseId)
+        public async Task<Enterprise> EditEnterprise(EnterpriseEditable enterpriseData,
+                                                     int enterpriseId)
         {
+            if (_context.Enterprises == null || _context.Users == null)
+            {
+                // Throw error if reference to database is null
+                throw new NullReferenceException("Referencia a base de datos en nula");
+            }
+            // Get user claims
+            var userClaims = getUserClaims();
+
             // Search the requested enterprise
             Enterprise? enterprise = await _context.Enterprises.FindAsync(enterpriseId);
 
@@ -101,7 +138,15 @@ namespace APIGestionFacturas.Services
             }
             // Every value included to modify is updated
             if (enterpriseData.Name != null) { enterprise.Name = enterpriseData.Name; }
-            if (enterpriseData.UserId != null) { enterprise.UserId = enterpriseData.UserId; }
+            if (enterpriseData.UserId != null)
+            {
+                if(await _context.Users.FindAsync(enterpriseData.UserId) == null)
+                {
+                    // Throw error if no valid enterprise was found
+                    throw new KeyNotFoundException("Usuario no encontrado");
+                }
+                enterprise.UserId = enterpriseData.UserId; 
+            }
             
             // Updated data of the enterprise related to updation
             enterprise.UpdatedBy = userClaims.Identity.Name;
@@ -115,10 +160,18 @@ namespace APIGestionFacturas.Services
             // Return updated enterprise data
             return enterprise;
         }
-        public async Task<Enterprise> DeleteEnterprise(GestionFacturasContext _context,
-                                                       ClaimsPrincipal userClaims,
-                                                       int enterpriseId)
+        public async Task<Enterprise> DeleteEnterprise(int enterpriseId)
         {
+            if (_context.Enterprises == null ||
+                _context.Invoices == null ||
+                _context.InvoiceLines == null)
+            {
+                // Throw error if reference to database is null
+                throw new NullReferenceException("Referencia a base de datos en nula");
+            }
+            // Get user claims
+            var userClaims = getUserClaims();
+
             // Search the requested enterprise
             var enterprise = await _context.Enterprises.FindAsync(enterpriseId);
 
@@ -155,6 +208,14 @@ namespace APIGestionFacturas.Services
 
             // Return deleted enterprise data
             return enterprise;
+        }
+
+        ClaimsPrincipal getUserClaims()
+        {
+            var userClaims = _httpContextAccessor?.HttpContext?.User;
+            if(userClaims == null) { throw new BadHttpRequestException("Datos de usuario que realiza la solicitud no encontrados"); }
+
+            return userClaims;
         }
     }
 }

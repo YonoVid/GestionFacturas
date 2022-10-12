@@ -1,4 +1,4 @@
-// Declaraciones para trabajar con Entity Frameworl
+// Imports to work with Entity Framework
 using Microsoft.EntityFrameworkCore;
 using APIGestionFacturas.DataAccess;
 using APIGestionFacturas.Services;
@@ -6,20 +6,21 @@ using Microsoft.OpenApi.Models;
 using DinkToPdf.Contracts;
 using DinkToPdf;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 
-// Obtener conexión a SQL
+// Get SQL connection
 const string CONNECTIONSTRING = "DbGestionFacturas";
 
 
 var connectionString = builder.Configuration.GetConnectionString(CONNECTIONSTRING);
 
-// Establecer contexto de base de datos
+// Set context of data base
 
 builder.Services.AddDbContext<GestionFacturasContext>(options => options.UseSqlServer(connectionString));
 
-// Añadir servicio de autorización de JWT
+// Add JWT service authorization
 builder.Services.AddJwtTokenService(builder.Configuration);
 
 
@@ -27,13 +28,16 @@ builder.Services.AddJwtTokenService(builder.Configuration);
 
 builder.Services.AddControllers();
 
-// Añadir servicios para los controladores
+// Service to access HttpContext
+builder.Services.AddHttpContextAccessor();
+
+// Add services for the controllers
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEnterpriseService, EnterpriseService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<IInvoiceLineService, InvoiceLineService>();
 
-// Añadir autorización
+// Add authorization
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnlyPolicy", policy => policy.RequireClaim("UserOnly", "Admin"));
@@ -42,10 +46,10 @@ builder.Services.AddAuthorization(options =>
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-// Configurar para que Swagger se encargue de autorizacion de Jwt 
+// Configure Swagger in charge of the authorization
 builder.Services.AddSwaggerGen(options =>
 {
-    //Definimos seguridad
+    // Define security settings
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -72,13 +76,13 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 
-// Habilitar CORS
+// Enable CORS
 builder.Services.AddCors(options => 
     options.AddPolicy(name: "CorsPolicy", policy =>
         policy.AllowAnyMethod().AllowAnyOrigin().AllowAnyHeader()
 ));
 
-// Incluir servicio de creación de pdf
+// Include pdf generation service
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
 
 var app = builder.Build();
@@ -94,7 +98,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-// Indicar a la aplicación que utilize los CORS
+// Tell app to use CORS
 app.UseCors("CorsPolicy");
 
 

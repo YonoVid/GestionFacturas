@@ -15,15 +15,12 @@ namespace APIGestionFacturas.Controllers
     [ApiController]
     public class InvoiceLineController : ControllerBase
     {
-        private readonly GestionFacturasContext _context;
         private readonly IInvoiceLineService _invoiceLineService;
         private readonly JwtSettings _jwtSettings;
 
-        public InvoiceLineController(GestionFacturasContext context,
-                            IInvoiceLineService invoiceLinesService,
-                            JwtSettings jwtSettings)
+        public InvoiceLineController(IInvoiceLineService invoiceLinesService,
+                                     JwtSettings jwtSettings)
         {
-            _context = context;
             _invoiceLineService = invoiceLinesService;
             _jwtSettings = jwtSettings;
         }
@@ -36,13 +33,13 @@ namespace APIGestionFacturas.Controllers
         public async Task<ActionResult<IEnumerable<InvoiceLine>>> GetInvoiceLines()
         {
             // Use service to get available invoice lines
-            var invoiceLines = await _invoiceLineService.GetAvailableInvoiceLines(_context.InvoiceLines, HttpContext.User).ToListAsync();
+            var invoiceLines = _invoiceLineService.GetAvailableInvoiceLines();
 
             // Check is result is null
             if (invoiceLines != null)
             {
-                // Return all invoice lines of the invoice from the database
-                return invoiceLines;
+                // Return all available invoice lines from the database
+                return await invoiceLines.ToListAsync();
             }
             // Return empty list if result of service is null
             return new List<InvoiceLine>();
@@ -54,7 +51,7 @@ namespace APIGestionFacturas.Controllers
         public async Task<ActionResult<IEnumerable<InvoiceLine>>> GetInvoiceLines(int id)
         {
             // Use service to get available invoice lines from invoice of the id
-            var invoiceLines = await _invoiceLineService.GetAvailableInvoiceLines(_context.InvoiceLines, HttpContext.User, id).ToListAsync();
+            var invoiceLines = await _invoiceLineService.GetAvailableInvoiceLines(id).ToListAsync();
 
             if (invoiceLines != null)
             {
@@ -71,7 +68,7 @@ namespace APIGestionFacturas.Controllers
         public async Task<ActionResult<InvoiceLine>> GetInvoiceLine(int id)
         {
             // Search selected invoice line with the id in the database
-            var invoiceLine = await _invoiceLineService.GetAvailableInvoiceLine(_context.InvoiceLines, HttpContext.User, id);
+            var invoiceLine = await _invoiceLineService.GetAvailableInvoiceLine(id);
 
             if (invoiceLine == null)
             {
@@ -94,7 +91,7 @@ namespace APIGestionFacturas.Controllers
             try
             {
                 // Use service to update and store invoice line
-                editedInvoiceLine = await _invoiceLineService.EditInvoiceLine(_context, HttpContext.User, invoiceLineData, id);
+                editedInvoiceLine = await _invoiceLineService.EditInvoiceLine(invoiceLineData, id);
             }
             catch (InvalidOperationException ex)
             {
@@ -105,6 +102,11 @@ namespace APIGestionFacturas.Controllers
             {
                 // If key of invoice line is not found return NotFound result
                 return BadRequest(ex.Message);
+            }
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -126,7 +128,7 @@ namespace APIGestionFacturas.Controllers
             try
             {
                 // Use service to create and store invoice line
-                createdInvoiceLine = await _invoiceLineService.CreateInvoiceLine(_context, HttpContext.User, invoiceLineData, (int)invoiceLineData.InvoiceId);
+                createdInvoiceLine = await _invoiceLineService.CreateInvoiceLine(invoiceLineData, (int)invoiceLineData.InvoiceId);
             }
             catch (KeyNotFoundException ex)
             {
@@ -137,6 +139,11 @@ namespace APIGestionFacturas.Controllers
             {
                 // If not enough data is provided
                 return BadRequest(ex.Message);
+            }
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -158,12 +165,17 @@ namespace APIGestionFacturas.Controllers
             try
             {
                 // Use service to obtain deleted invoice line and store it
-                deletedInvoiceLine = await _invoiceLineService.DeleteInvoiceLine(_context, HttpContext.User, id);
+                deletedInvoiceLine = await _invoiceLineService.DeleteInvoiceLine(id);
             }
             catch (KeyNotFoundException ex)
             {
                 // If the invoice is not founded
                 return NotFound();
+            }
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
             }
             // Return message to indicate action was successful
             return Ok();

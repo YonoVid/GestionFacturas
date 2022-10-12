@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -16,16 +15,13 @@ namespace APIGestionFacturas.Controllers
     [ApiController]
     public class EnterpriseController : ControllerBase
     {
-        private readonly GestionFacturasContext _context;           //Contexto con las referencias a tablas de la base de datos
         private readonly IEnterpriseService _enterpriseService;     //Servicio relacionado a las empresas
         private readonly JwtSettings _jwtSettings;                  //Configuración de JWT
         
         //Initialize services
-        public EnterpriseController(GestionFacturasContext context,
-                            IEnterpriseService enterpriseService,
-                            JwtSettings jwtSettings)
+        public EnterpriseController(IEnterpriseService enterpriseService,
+                                    JwtSettings jwtSettings)
         {
-            _context = context;
             _enterpriseService = enterpriseService;
             _jwtSettings = jwtSettings;
         }
@@ -38,12 +34,13 @@ namespace APIGestionFacturas.Controllers
         public async Task<ActionResult<IEnumerable<Enterprise>>> GetEnterprises()
         {
             // Use service to get available enterprises
-            var enterprises = await _enterpriseService.GetAvailableEnterprises(_context.Enterprises, HttpContext.User).ToListAsync();
-            
+            var enterprises = _enterpriseService.GetAvailableEnterprises();
+
+            // Check is result is null
             if (enterprises != null)
             {
                 // Return all available enterprises from the database
-                return enterprises;
+                return await enterprises.ToListAsync();
             }
             // Return empty list if result of service is null
             return new List<Enterprise>();
@@ -55,7 +52,7 @@ namespace APIGestionFacturas.Controllers
         public async Task<ActionResult<Enterprise>> GetEnterprise(int id)
         {
             // Search selected enterprise with the id in the database
-            var enterprise = await _enterpriseService.GetAvailableEnterprise(_context.Enterprises, HttpContext.User, id);
+            var enterprise = await _enterpriseService.GetAvailableEnterprise(id);
 
             if (enterprise == null)
             {
@@ -77,7 +74,7 @@ namespace APIGestionFacturas.Controllers
             try
             {
                 // Use service to update and store enterprise
-                editedEnterprise = await _enterpriseService.EditEnterprise(_context, HttpContext.User, enterpriseData, id);
+                editedEnterprise = await _enterpriseService.EditEnterprise(enterpriseData, id);
             }
             catch (KeyNotFoundException ex)
             {
@@ -88,6 +85,11 @@ namespace APIGestionFacturas.Controllers
             {
                 // If not enough data is provided
                 return BadRequest(ex.Message);
+            }
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -110,7 +112,7 @@ namespace APIGestionFacturas.Controllers
             try
             {
                 // Use service to create and store enterprise
-                createdEnterprise = await _enterpriseService.CreateEnterprise(_context, HttpContext.User, enterpriseData);
+                createdEnterprise = await _enterpriseService.CreateEnterprise(enterpriseData);
             }
             catch (KeyNotFoundException ex)
             {
@@ -121,6 +123,11 @@ namespace APIGestionFacturas.Controllers
             {
                 // If not enough data is provided
                 return BadRequest(ex.Message);
+            }
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -142,12 +149,17 @@ namespace APIGestionFacturas.Controllers
             try
             {
                 // Use service to obtain deleted enterprise and store it
-                deletedEnterprise = await _enterpriseService.DeleteEnterprise(_context, HttpContext.User, id);
+                deletedEnterprise = await _enterpriseService.DeleteEnterprise(id);
             }
             catch (KeyNotFoundException ex)
             {
                 // If the enterprise is not founded
                 return NotFound(ex.Message);
+            }
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
             }
             // Return message to indicate action was successful
             return Ok();
