@@ -12,5 +12,4 @@ export interface IUser extends IBaseEntity{
     email: string,
     password: string
     userRol: UserRol
-    enterprises: IEnterprise[]
 }

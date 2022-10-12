@@ -5,7 +5,7 @@
     <mat-card-subtitle>
         Accede a tu cuenta
     </mat-card-subtitle>
-    <form #formDirective ="ngForm" [formGroup]="loginForm" (submit)="submitForm(formDirective)">
+    <form [formGroup]="loginForm" (submit)="submitForm()">
         <!-- Email input field -->
         <mat-form-field>
             <input matInput type="email" placeholder="Email" formControlName="email" maxlength="50">

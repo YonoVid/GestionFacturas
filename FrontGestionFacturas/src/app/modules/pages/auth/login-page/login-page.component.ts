@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { IUserAuth } from 'src/app/models/interfaces/user-auth.interface';
 import { IToken } from 'src/app/models/interfaces/user-token.interface';
 import { AuthService } from 'src/app/services/auth.service';
 

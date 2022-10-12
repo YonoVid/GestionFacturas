@@ -7,7 +7,6 @@ import { InvoiceService } from 'src/app/services/invoice.service';
 
 import { MatTableDataSource } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
-import { IFilter, ITableFilter } from 'src/app/models/table/table-filter';
 import { InvoiceTableComponent } from '../invoice-table/invoice-table.component';
 import { MatPaginator } from '@angular/material/paginator';
 import { IInvoiceTableData } from 'src/app/models/interfaces/invoice-table-data.interface';
@@ -165,17 +164,13 @@ export class HomePageComponent implements OnInit {
     this.invoiceService.getInvoiceLines(invoice.id).subscribe({
       next: (response: IInvoiceLine[]) =>
       {
-        // Calculate total of invoice
-        let total = 0;
-        response.forEach((line) => total += line.quantity * line.itemValue);
-
+        // Open modal dialog of table with invoice data
         this.dialog.open(InvoiceTableComponent, {
           data:
           {
             invoice: invoice,
             enterprise: this.enterprises[invoice.enterpriseId],
-            invoiceLines: response,
-            total: total
+            invoiceLines: response
           } 
         });
         

@@ -5,7 +5,7 @@
     <mat-card-subtitle>
         Crea una cuenta nueva
     </mat-card-subtitle>
-    <form #formDirective="ngForm" [formGroup]="registerForm" (submit)="submitForm(formDirective)">
+    <form [formGroup]="registerForm" (submit)="submitForm()">
         <!-- Name input field-->
         <mat-form-field>
             <input matInput type="text" placeholder="Nombre" formControlName="name">

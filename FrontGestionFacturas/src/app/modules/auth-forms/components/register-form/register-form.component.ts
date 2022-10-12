@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Input, Output } from '@angular/core';
+import { Component, EventEmitter, OnInit, Input, Output, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormGroupDirective, Validators } from '@angular/forms';
 
 @Component({
@@ -7,9 +7,13 @@ import { FormBuilder, FormGroup, FormGroupDirective, Validators } from '@angular
   styleUrls: ['./register-form.component.scss']
 })
 export class RegisterFormComponent implements OnInit {
-
+  // Form data
   registerForm: FormGroup = new FormGroup({});
+  // Form directive reference
+  @ViewChild(FormGroupDirective) registerFormDirective!: FormGroupDirective;
+  // Page to be redirected to login
   @Input() loginPage: string = '';
+  // Event to emit on submit
   @Output() onSubmit: EventEmitter<{}> = new EventEmitter<{}>();
   
   constructor(private formBuilder: FormBuilder) { }
@@ -30,7 +34,7 @@ export class RegisterFormComponent implements OnInit {
    * Emits the data of the form with a event.
    * @param formDirective The reference of the form to be submited.
    */
-  submitForm(formDirective: FormGroupDirective)
+  submitForm()
   {
     // Check if the form is valid
     if(this.registerForm.valid)
@@ -39,7 +43,7 @@ export class RegisterFormComponent implements OnInit {
       this.onSubmit.emit(this.registerForm.value);
       
       // Form is reseted
-      formDirective.resetForm();
+      this.registerFormDirective.resetForm();
       this.registerForm.reset();
     }
   }
