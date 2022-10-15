@@ -1,0 +1,104 @@
+<!-- Name/Description of the invoice -->
+<h1 mat-dialog-title>{{data.invoice.name}}</h1>
+<div mat-dialog-content>
+    <!-- Form to add a new row to the invoice -->
+    <mat-card>
+        <form class="example-container" [formGroup]="rowForm" (submit)="createRow()">
+            <!-- Column of description of the item -->
+            <mat-form-field appearance="fill">
+                <mat-label>Descripción</mat-label>
+                <input matInput type="text" formControlName="item" maxlength="50">
+            </mat-form-field>
+            <!-- Column of quanitity of the item -->
+            <mat-form-field appearance="fill" class="small-input">
+                <mat-label>Cantidad</mat-label>
+                <input matInput type="number" formControlName="quantity" min="1">
+            </mat-form-field>
+            <!-- Column of value of the item -->
+            <mat-form-field appearance="fill" class="medium-input">
+                <mat-label>Valor</mat-label>
+                <input matInput type="number" formControlName="itemValue" min="0">
+            </mat-form-field>
+            <!-- Submit button enabled if form is valid -->
+            <button type="submit" mat-raised-button color="primary" [disabled]="rowForm.invalid">
+                Añadir
+            </button>
+        </form>
+    </mat-card>
+    
+    <!-- Table of the invoice data -->
+    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8 invoice-table">
+        <!-- Editable columns of the row -->
+        <ng-container [matColumnDef]="col.key" *ngFor="let col of columnsSchema">
+            <th mat-header-cell *matHeaderCellDef>
+                {{ col.label }}
+            </th>
+            <td mat-cell *matCellDef="let element">
+                <!-- If row is not being edited show it´s value as text -->
+                <div *ngIf="!element.isEdit">
+                    {{ ((col.key === 'itemValue')? (element[col.key] | currency): element[col.key]) }}
+                </div>
+                <!-- If not input field is shown -->
+                <div *ngIf="element.isEdit">
+                    <mat-form-field [class]="getClass(col.key)">
+                        <input [type]="col.type" matInput [(ngModel)]="element[col.key]" />
+                    </mat-form-field>
+                </div>
+            </td>
+        </ng-container>
+
+        <!-- Column of total import -->
+        <ng-container matColumnDef="invoice-totalAmount">
+            <th mat-header-cell *matHeaderCellDef> Subtotal </th>
+            <td mat-cell *matCellDef="let element"> {{element.quantity * element.itemValue | currency}}</td>
+        </ng-container>
+
+        <!-- Column of actions of the row -->
+        <ng-container matColumnDef="invoice-actions">
+            <th mat-header-cell *matHeaderCellDef> Actions </th>
+            <td mat-cell *matCellDef="let element">
+                <!-- Actions if editing -->
+                <div class="btn-edit" *ngIf="element.isEdit; else dataField">
+                    <button mat-mini-fab color="accent" (click)="element.isEdit = !element.isEdit; editedRow(element)">
+                        <mat-icon>done</mat-icon>
+                    </button>
+                    <button mat-mini-fab color="accent" (click)="element.isEdit = !element.isEdit; editStop(element)">
+                        <mat-icon>cancel</mat-icon>
+                    </button>
+                </div>
+                <!-- Default actions -->
+                <ng-template #dataField>
+                    <button mat-mini-fab color="accent" (click)="element.isEdit = !element.isEdit; editStart(element)">
+                        <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-mini-fab color="warn" (click)="deleteRow(element)">
+                        <mat-icon>delete_forever</mat-icon>
+                    </button>
+                </ng-template>
+            </td>
+        </ng-container>
+        <!-- Set the shown columns -->
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+    </table>
+    <!-- Data of the total import of the invoice -->
+    <mat-card style="float:right">
+        <table class="subtotal-table">
+            <tbody>
+                <tr>
+                    <td><strong>Subtotal</strong></td>
+                    <td>{{getTotal() | currency}}</td>
+                </tr>
+                <tr>
+                    <td><strong>Tax {{data.invoice.taxPercentage}}%</strong></td>
+                    <td>{{getTotal() * data.invoice.taxPercentage/100 | currency}}</td>
+                </tr>
+                <tr>
+                    <td><strong>TOTAL</strong></td>
+                    <td>{{getTotal() * (1 + data.invoice.taxPercentage/100) | currency}}</td>
+                </tr>
+            </tbody>
+        </table>
+    </mat-card>
+</div>

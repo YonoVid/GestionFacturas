@@ -1,0 +1,74 @@
+<div class="wrapper">
+    <!-- Spinner to show if data is being loaded -->
+    <div class="overlay" *ngIf="loadingData">
+      <div class="spinner-wrapper">
+        <mat-spinner></mat-spinner>
+      </div>
+    </div>
+  
+    <div class="loaded-content mat-elevation-z8 invoice-table" [class.blurred]="loadingData">
+        <!-- Field to add a text filter to the table -->
+        <mat-card>
+            <mat-form-field>
+                <mat-label>Filtro de texto</mat-label>
+                <input type="text" matInput [(ngModel)]="dataSource.filter" />
+            </mat-form-field>
+        </mat-card>
+
+        <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)">
+            <!-- Column of the Id  -->
+            <ng-container matColumnDef="id">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> Id </th>
+                <td mat-cell *matCellDef="let element"> {{element.id}} </td>
+            </ng-container>
+        
+            <!-- Column of the name -->
+            <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> Nombre </th>
+                <td mat-cell *matCellDef="let element"> {{element.name}} </td>
+            </ng-container>
+        
+            <!-- Column of the enterprise -->
+            <ng-container matColumnDef="home-enterprise">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header="enterpriseId"> Empresa </th>
+                <td mat-cell *matCellDef="let element"> {{element.enterprise}} </td>
+            </ng-container>
+
+            <!-- Column of the date of creation -->
+            <ng-container matColumnDef="createdDate">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> Fecha </th>
+                <td mat-cell *matCellDef="let element"> {{element.createdDate | date}} </td>
+            </ng-container>
+
+            <!-- Column of total import -->
+            <ng-container matColumnDef="totalAmount">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header> Importe </th>
+                <td mat-cell *matCellDef="let element"> {{element.totalAmount | currency}}</td>
+            </ng-container>
+
+            <!-- Column of actions available for each row -->
+            <ng-container matColumnDef="home-edit">
+                <th mat-header-cell *matHeaderCellDef> </th>
+                <td mat-cell *matCellDef="let element"> 
+                    <button mat-mini-fab (click)="openInvoiceTable(element.id)">
+                        <mat-icon>open_in_new</mat-icon>
+                    </button>
+                    <button mat-mini-fab (click)="openInvoicePdf(element.id)">
+                        <mat-icon>picture_as_pdf</mat-icon>
+                    </button>
+                </td>
+            </ng-container>
+        
+            <!-- Define column to be shown -->
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        
+        </table>
+        <!-- Paginator of the table -->
+        <mat-paginator [pageSizeOptions]="[5, 10, 20]"
+                 showFirstLastButtons 
+                 aria-label="Select page of invoices">
+        </mat-paginator>
+    </div>
+  </div>
+
