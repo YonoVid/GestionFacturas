@@ -39,16 +39,11 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult> GetInvoicePdf(int id)
         {
-            // User serviec to get the requested id
-            var invoice = await _invoiceService.GetAvailableInvoice(id);
-
-            if (invoice == null)
-            {
-                // If the invoice in not founded
-                return NotFound();
-            }
             try
             {
+                // User serviec to get the requested id
+                var invoice = await _invoiceService.GetAvailableInvoice(id);
+
                 // Generate invoice pdf
                 var pdf = _converter.Convert(await _invoiceService.GetInvoicePdf(id));
 
@@ -61,7 +56,17 @@ namespace APIGestionFacturas.Controllers
                 // Return file in a byte format
                 return File(pdf, "application/pdf");
             }
-            catch(Exception ex)
+            catch (KeyNotFoundException ex)
+            {
+                // If key of the invoice is not found return NotFound result
+                return NotFound(ex.Message);
+            }
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
+            }
+            catch (Exception ex)
             {
                 // Return BadRequest if a error is catched
                 return BadRequest(ex.Message);
@@ -75,16 +80,21 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<IEnumerable<Invoice>>> GetInvoices()
         {
-            // Use service to get available invoices
-            var invoices = _invoiceService.GetAvailableInvoices();
-
-            if(invoices != null)
+            // Variable to store invoices
+            IQueryable<Invoice> invoices;
+            try
             {
-                // Return all available invoices from the database
-                return await invoices.ToListAsync();
+                // Use service to get available invoices
+                invoices = _invoiceService.GetAvailableInvoices();
+
             }
-            // Return empty list if result of service is null
-            return new List<Invoice>();
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
+            }
+            // Return list of result from the service
+            return invoices.ToList();
         }
 
         [HttpGet]
@@ -92,30 +102,42 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<IEnumerable<Invoice>>> GetEnterpriseInvoices(int id)
         {
-            // Use service to get available invoices from a enterprise
-            var invoices = _invoiceService.GetAvailableEnterpriseInvoices(id);
-            
-            if (invoices != null)
+            IQueryable<Invoice> invoices;
+            try
             {
-                // Return all available invoices from the database
-                return await invoices.ToListAsync();
+                // Use service to get available invoices from a enterprise
+                invoices = _invoiceService.GetAvailableEnterpriseInvoices(id);
             }
-            // Return empty list if result of service is null
-            return new List<Invoice>();
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
+            }
+            // Return result of service as a IEnumerable
+            return invoices.ToList();
         }
 
         // GET: api/Invoice/5
         [HttpGet("{id}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<Invoice>> GetInvoice(int id)
-        {
-            // Search selected invoice with the id in the database
-            var invoice = await _invoiceService.GetAvailableInvoice(id);
-
-            if (invoice == null)
+        {   
+            // Variable to store invoice
+            Invoice invoice;
+            try
             {
-                // If invoice isn't found send NotFound result
-                return NotFound();
+                // Search selected invoice with the id in the database
+                invoice = await _invoiceService.GetAvailableInvoice(id);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                // If key of the invoice is not found return NotFound result
+                return NotFound(ex.Message);
+            }
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
             }
             // Return founded invoice
             return invoice;
@@ -176,7 +198,7 @@ namespace APIGestionFacturas.Controllers
             catch(KeyNotFoundException ex)
             {
                 // If key of the invoice is not found return NotFound result
-                return BadRequest(ex.Message);
+                return NotFound(ex.Message);
             }
             catch (InvalidOperationException ex)
             {

@@ -14,19 +14,19 @@ namespace APIGestionFacturas.Services
         /// authorized to read.
         /// </summary>
         /// <returns> IQueryable of the allowed invoices to read or null otherwise </returns>
-        IQueryable<Invoice>? GetAvailableInvoices();
+        IQueryable<Invoice> GetAvailableInvoices();
         /// <summary>
         /// Function may return a invoice, but only if the user is authorized to read it.
         /// </summary>
         /// <param name="id"> Id asociated to the selected invoice. </param>
         /// <returns> Task with the requested invoice or null otherwise </returns>
-        Task<Invoice?> GetAvailableInvoice(int id);
+        Task<Invoice> GetAvailableInvoice(int id);
         /// <summary>
         /// Function return the invoices from a enterprise that are available to the user.
         /// </summary>
         /// <param name="enterpriseId"> Id of the enterprise selected. </param>
         /// <returns> IQueryable with all the invoices the user is allowed to read.  </returns>
-        IQueryable<Invoice>? GetAvailableEnterpriseInvoices(int enterpriseId);
+        IQueryable<Invoice> GetAvailableEnterpriseInvoices(int enterpriseId);
         /// <summary>
         /// Function to create a Invoice class inside a database.
         /// </summary>

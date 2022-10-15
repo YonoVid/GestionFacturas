@@ -28,7 +28,7 @@ namespace APIGestionFacturas.Services
             _invoiceLineService = invoiceLineService;
         }
 
-        public IQueryable<Invoice>? GetAvailableInvoices()
+        public IQueryable<Invoice> GetAvailableInvoices()
         {
             if (_context.Invoices == null)
             {
@@ -41,25 +41,26 @@ namespace APIGestionFacturas.Services
             // Check if user is 'Administrator'
             if (!userClaims.IsInRole("Administrator"))
             {
-                // Check if user identity is not null
+                // Check if user identity is not null and try to get id
                 var identity = userClaims.Identity as ClaimsIdentity;
-                if (identity != null)
+                var id = identity?.FindFirst("Id")?.Value;
+
+                if (id != null)
                 {
-                    // Get user id
-                    var id = identity.FindFirst("Id").Value;
                     // Return all invoices with a enterprise managed by the user
                     return _context.Invoices.Where((invoice) => 
-                        invoice.Enterprise.UserId.ToString() == id && !invoice.IsDeleted
+                        invoice.Enterprise.UserId.ToString().Equals(id) &&
+                        !invoice.IsDeleted
                     );
 
                 }
-                // If identity
-                return null;
+                // If identity is not founded return empty IQueryable
+                return Enumerable.Empty<Invoice>().AsQueryable();
             }
             // Return obtained invoices, may be null
             return _context.Invoices;
         }
-        public async Task<Invoice?> GetAvailableInvoice(int id)
+        public async Task<Invoice> GetAvailableInvoice(int id)
         {
             if (_context.Invoices == null)
             {
@@ -80,14 +81,20 @@ namespace APIGestionFacturas.Services
                 if (result.Enterprise.UserId.ToString() != identity?.FindFirst("Id")?.Value)
                 {
                     // Return null if the user doesn't have permission
-                    return null;
+                    result = null;
                 }
             }
+            if (result == null)
+            {
+                // Throw error if no valid invoice was founded
+                throw new KeyNotFoundException("Factura no encontrada");
+            }
+
             // Return obtained invoice, may be null
             return result;
         }
 
-        public IQueryable<Invoice>? GetAvailableEnterpriseInvoices(int enterpriseId)
+        public IQueryable<Invoice> GetAvailableEnterpriseInvoices(int enterpriseId)
         {
             if (_context.Invoices == null)
             {
@@ -102,19 +109,19 @@ namespace APIGestionFacturas.Services
             {
                 // Get all the invoices from the enterprise that are not deleted
                 var enterpriseInvoices = _context.Invoices.Where((invoice) => invoice.Enterprise.Id == enterpriseId &&
-                                                                     !invoice.IsDeleted);
-                // Check if user identity is not null
+                                                                              !invoice.IsDeleted);
+                // Check if user identity is not null and try to get id
                 var identity = userClaims.Identity as ClaimsIdentity;
-                if (identity != null)
+                var id = identity?.FindFirst("Id")?.Value;
+
+                if (id != null)
                 {
-                    // Get user id
-                    var id = identity.FindFirst("Id").Value;
                     // Check if the asociated user of the enterprise is the user making the call
-                    if (enterpriseInvoices.Any((invoice) => invoice.Enterprise.UserId.ToString() == id))
+                    if (enterpriseInvoices.Any((invoice) => invoice.Enterprise.UserId.ToString().Equals(id)))
                     { return enterpriseInvoices; }
                 }
-                // If a condition is not met return null
-                return null;
+                // If a condition is not met return empty IQueryable
+                return Enumerable.Empty<Invoice>().AsQueryable();
             }
             // If user is 'Administrator' return all invoices from the enterprise
             return _context.Invoices.Where((invoice) => invoice.Enterprise.Id == enterpriseId);
@@ -148,11 +155,14 @@ namespace APIGestionFacturas.Services
             invoice.Enterprise = enterprise;
 
             // Updated related data of the creation
-            invoice.CreatedBy = userClaims.Identity.Name;
+            if (userClaims.Identity?.Name == null && !userClaims.IsInRole("Administrator"))
+            { throw new NullReferenceException("Identidad de petición es nula"); }
+            // Identity only is allowed to be empty if user is administrator
+            invoice.DeletedBy = userClaims.Identity?.Name ?? "Admin";
 
             // Add the invoice to the database and save the changes
             // Generated invoice data is updated with genereated id
-            invoice.Id = _context.Invoices.Add(invoice).Entity.Id;
+            _context.Invoices.Add(invoice);
             await _context.SaveChangesAsync();
 
             // Return created invoice data
@@ -162,7 +172,7 @@ namespace APIGestionFacturas.Services
         public async Task<Invoice> EditInvoice(InvoiceEditable invoiceData,
                                                int invoiceId)
         {
-            if (_context.Invoices == null)
+            if (_context.Enterprises == null)
             {
                 // Throw error if reference to database is null
                 throw new NullReferenceException("Referencia a base de datos en nula");
@@ -197,14 +207,15 @@ namespace APIGestionFacturas.Services
                 }
                 invoice.EnterpriseId = (int)invoiceData.EnterpriseId; 
             }
-            
+
             // Updated data of the invoice related to updation
-            invoice.UpdatedBy = userClaims.Identity.Name;
+            // Identity only is allowed to be empty if user is administrator
+            invoice.DeletedBy = userClaims.Identity?.Name ?? "Admin";
             invoice.UpdatedDate = DateTime.Now;
 
             // Invoice is updated and changes are saved
-            _context.Invoices.Update(invoice);
-            _context.Entry(invoice).State = EntityState.Modified;
+            _context.Invoices!.Update(invoice);
+            _context.SetModified(invoice);
             await _context.SaveChangesAsync();
 
             // Return updated invoice data
@@ -213,7 +224,7 @@ namespace APIGestionFacturas.Services
 
         public async Task<Invoice> DeleteInvoice(int invoiceId)
         {
-            if (_context.Invoices == null)
+            if (_context.InvoiceLines == null)
             {
                 // Throw error if reference to database is null
                 throw new NullReferenceException("Referencia a base de datos en nula");
@@ -230,17 +241,19 @@ namespace APIGestionFacturas.Services
                 throw new KeyNotFoundException("Factura no encontrada");
             }
             // Every related line of the invoice is removed
-            foreach(InvoiceLine invoiceLine in _context.InvoiceLines.Where((InvoiceLine row) => row.InvoiceId == invoice.Id))
+            foreach(InvoiceLine invoiceLine in _context.InvoiceLines.Where((InvoiceLine row) => row.InvoiceId == invoice.Id).ToList())
             {
                 _context.InvoiceLines.Remove(invoiceLine);
             }
             // Updated data of the invoice related to deletion
-            invoice.DeletedBy = userClaims.Identity.Name;
+            // Identity only is allowed to be empty if user is administrator
+            invoice.DeletedBy = userClaims.Identity?.Name ?? "Admin";
             invoice.DeletedDate = DateTime.Now;
             invoice.IsDeleted = true;
 
             // Invoice is updated and changes are saved
             _context.Invoices.Update(invoice);
+            _context.SetModified(invoice);
             await _context.SaveChangesAsync();
 
             // Return deleted invoice data
@@ -249,8 +262,7 @@ namespace APIGestionFacturas.Services
 
         public async Task<HtmlToPdfDocument> GetInvoicePdf(int id)
         {
-            if (_context.Invoices == null ||
-                _context.Enterprises == null ||
+            if (_context.Enterprises == null ||
                 _context.InvoiceLines == null ||
                 _context.Users == null)
             {
@@ -261,19 +273,7 @@ namespace APIGestionFacturas.Services
             // User serviec to get the requested id
             var invoice = await GetAvailableInvoice(id);
 
-            if (invoice == null)
-            {
-                // If the invoice in not founded
-                throw new KeyNotFoundException("Factura no encontrada");
-            }
-
             var enterprise = await _enterpriseService.GetAvailableEnterprise(invoice.EnterpriseId);
-
-            if(enterprise == null)
-            {
-                // If the enterprise in not founded
-                throw new KeyNotFoundException("Empresa no encontrada");
-            }
 
             // Get invoice enterprise data
             invoice.Enterprise = enterprise;
@@ -325,7 +325,7 @@ namespace APIGestionFacturas.Services
             };
         }
 
-        ClaimsPrincipal getUserClaims()
+        public ClaimsPrincipal getUserClaims()
         {
             var userClaims = _httpContextAccessor?.HttpContext?.User;
             if (userClaims == null) { throw new BadHttpRequestException("Datos de usuario que realiza la solicitud no encontrados"); }

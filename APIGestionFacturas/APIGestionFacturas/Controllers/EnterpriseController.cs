@@ -33,17 +33,21 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<IEnumerable<Enterprise>>> GetEnterprises()
         {
-            // Use service to get available enterprises
-            var enterprises = _enterpriseService.GetAvailableEnterprises();
-
-            // Check is result is null
-            if (enterprises != null)
+            // Variable to store enterprises
+            IQueryable<Enterprise> enterprises;
+            try
             {
-                // Return all available enterprises from the database
-                return await enterprises.ToListAsync();
+                // Use service to get available enterprises
+                enterprises = _enterpriseService.GetAvailableEnterprises();
+                
             }
-            // Return empty list if result of service is null
-            return new List<Enterprise>();
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
+            }
+            // Return list of result from the service
+            return enterprises.ToList();
         }
 
         // GET: api/Enterprise/5
@@ -51,13 +55,22 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<Enterprise>> GetEnterprise(int id)
         {
-            // Search selected enterprise with the id in the database
-            var enterprise = await _enterpriseService.GetAvailableEnterprise(id);
-
-            if (enterprise == null)
+            // Variable to store enterprise
+            Enterprise enterprise;
+            try
             {
-                // If enterprise isn't found send NotFound result
-                return NotFound();
+                // Search selected enterprise with the id in the database
+                enterprise = await _enterpriseService.GetAvailableEnterprise(id);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                // If key of the enterprise is not found return NotFound result
+                return NotFound(ex.Message);
+            }
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
             }
             // Return founded enterprise
             return enterprise;
@@ -117,7 +130,7 @@ namespace APIGestionFacturas.Controllers
             catch (KeyNotFoundException ex)
             {
                 // If key of the enterprise is not found return NotFound result
-                return BadRequest(ex.Message);
+                return NotFound(ex.Message);
             }
             catch (InvalidOperationException ex)
             {

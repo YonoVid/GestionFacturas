@@ -31,7 +31,7 @@ namespace APIGestionFacturas.Services
                     options.SaveToken = true;
                     options.TokenValidationParameters = new TokenValidationParameters()
                     {
-                        ValidateIssuerSigningKey = bindJwtSettings.ValidateIssuerSigninKey,
+                        ValidateIssuerSigningKey = bindJwtSettings.ValidateIssuerSigningKey,
                         IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(bindJwtSettings.IssuerSigningKey)),
                         ValidateIssuer = bindJwtSettings.ValidateIssuer,
                         ValidIssuer = bindJwtSettings.ValidIssuer,

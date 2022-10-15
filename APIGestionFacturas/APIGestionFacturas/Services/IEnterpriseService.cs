@@ -12,13 +12,13 @@ namespace APIGestionFacturas.Services
         /// Function return the enterprises available to the user.
         /// </summary>
         /// <returns> IQueryable with the enterprises available to the user. </returns>
-        IQueryable<Enterprise>? GetAvailableEnterprises();
+        IQueryable<Enterprise> GetAvailableEnterprises();
         /// <summary>
         /// Function may return a enterprise, but only if the user is authorized to read it.
         /// </summary>
         /// <param name="id"> Id asociated to the selected enterprise. </param>
         /// <returns> Task with the requested invoice or null otherwise </returns>
-        Task<Enterprise?> GetAvailableEnterprise(int id);
+        Task<Enterprise> GetAvailableEnterprise(int id);
 
         /// <summary>
         /// Function to create a Enterprise class inside a database.

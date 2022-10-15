@@ -32,17 +32,21 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<IEnumerable<InvoiceLine>>> GetInvoiceLines()
         {
-            // Use service to get available invoice lines
-            var invoiceLines = _invoiceLineService.GetAvailableInvoiceLines();
-
-            // Check is result is null
-            if (invoiceLines != null)
+            // Variable to store invoices
+            IQueryable<InvoiceLine> invoiceLines;
+            try
             {
-                // Return all available invoice lines from the database
-                return await invoiceLines.ToListAsync();
+                // Use service to get available invoice lines
+                invoiceLines = _invoiceLineService.GetAvailableInvoiceLines();
+
             }
-            // Return empty list if result of service is null
-            return new List<InvoiceLine>();
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
+            }
+            // Return list of result from the service
+            return invoiceLines.ToList();
         }
 
         [HttpGet]
@@ -67,13 +71,22 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator, User")]
         public async Task<ActionResult<InvoiceLine>> GetInvoiceLine(int id)
         {
-            // Search selected invoice line with the id in the database
-            var invoiceLine = await _invoiceLineService.GetAvailableInvoiceLine(id);
-
-            if (invoiceLine == null)
+            // Variable to store invoice line
+            InvoiceLine invoiceLine;
+            try
             {
-                // If invoice line isn't found send NotFound result
-                return NotFound();
+                // Search selected invoice line with the id in the database
+                invoiceLine = await _invoiceLineService.GetAvailableInvoiceLine(id);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                // If key of the enterprise is not found return NotFound result
+                return NotFound(ex.Message);
+            }
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
             }
             // Return founded invoice line
             return invoiceLine;
@@ -93,14 +106,14 @@ namespace APIGestionFacturas.Controllers
                 // Use service to update and store invoice line
                 editedInvoiceLine = await _invoiceLineService.EditInvoiceLine(invoiceLineData, id);
             }
-            catch (InvalidOperationException ex)
-            {
-                // For any other error from the database throw an exception
-                return BadRequest(ex.Message);
-            }
             catch (KeyNotFoundException ex)
             {
                 // If key of invoice line is not found return NotFound result
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // For any other error from the database throw an exception
                 return BadRequest(ex.Message);
             }
             catch (NullReferenceException ex)
@@ -128,12 +141,12 @@ namespace APIGestionFacturas.Controllers
             try
             {
                 // Use service to create and store invoice line
-                createdInvoiceLine = await _invoiceLineService.CreateInvoiceLine(invoiceLineData, (int)invoiceLineData.InvoiceId);
+                createdInvoiceLine = await _invoiceLineService.CreateInvoiceLine(invoiceLineData);
             }
             catch (KeyNotFoundException ex)
             {
                 // If key of invoice is not found return NotFound result
-                return BadRequest(ex.Message);
+                return NotFound(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
@@ -170,7 +183,7 @@ namespace APIGestionFacturas.Controllers
             catch (KeyNotFoundException ex)
             {
                 // If the invoice is not founded
-                return NotFound();
+                return NotFound(ex.Message);
             }
             catch (NullReferenceException ex)
             {

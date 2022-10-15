@@ -47,6 +47,9 @@ namespace APIGestionFacturas.Services
 
         public IEnumerable<Enterprise> GetUserEnterprises(int id)
         {
+            // Check base expectations
+            CheckBaseExpectations();
+
             if (_context.Enterprises == null)
             {
                 // Throw error if reference to database is null
@@ -76,7 +79,7 @@ namespace APIGestionFacturas.Services
                 userData.Password == null)
             {
                 // Throw error if not enough data is provided
-                throw new InvalidOperationException("No hay suficientes datos para modificar la entidad");
+                throw new InvalidOperationException("No hay suficientes datos para crear la entidad");
             }
             if (UserExists(new User(userData)))
             {
@@ -92,7 +95,7 @@ namespace APIGestionFacturas.Services
 
             // Add the user to the database and save the changes
             // Generated user data is updated with genereated id
-            user.Id = _context.Users.Add(user).Entity.Id;
+            _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
             // Return created user data
@@ -126,7 +129,7 @@ namespace APIGestionFacturas.Services
                 userData.Rol == null)
              {
                 // Throw error if not enough data is provided
-                throw new InvalidOperationException("No hay suficientes datos para modificar la entidad");
+                throw new InvalidOperationException("No hay suficientes datos para crear la entidad");
             }
             if(UserExists(new User(userData)))
             {
@@ -141,8 +144,8 @@ namespace APIGestionFacturas.Services
             user.CreatedDate = DateTime.Now;
 
             // Add the user to the database and save the changes
-            // Generated user data is updated with genereated id
-            user.Id = _context.Users.Add(user).Entity.Id;
+            // Generated user data is updated with generated id
+            _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
             // Return created user data
@@ -184,7 +187,7 @@ namespace APIGestionFacturas.Services
 
             // User is updated and changes are saved
             _context.Users.Update(user);
-            _context.Entry(user).State = EntityState.Modified;
+            _context.SetModified(user);
             await _context.SaveChangesAsync();
 
             // Return updated user data
@@ -209,18 +212,19 @@ namespace APIGestionFacturas.Services
 
             // User is updated and changes are saved
             _context.Users.Update(user);
+            _context.SetModified(user);
             await _context.SaveChangesAsync();
 
             // Return deleted user data
             return user;
         }
 
-        ClaimsPrincipal CheckBaseExpectations()
+        public ClaimsPrincipal CheckBaseExpectations()
         {
             if (_context.Users == null)
             {
                 // Throw error if reference to database is null
-                throw new NullReferenceException("Referencia a base de datos en nula");
+                throw new NullReferenceException("Referencia a base de datos es nula");
             }
             return GetUserClaims();
         }

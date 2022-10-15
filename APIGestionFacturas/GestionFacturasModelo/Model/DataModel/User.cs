@@ -11,7 +11,7 @@ namespace GestionFacturasModelo.Model.DataModel
     public class User : BaseEntity
     {
         // Generate default User
-        User() { }
+        public User() { }
         // Generate default User, but replace values with data
         public User(UserEditable data)
         {

@@ -12,7 +12,7 @@ namespace APIGestionFacturas.Services
         /// Function return the invoice lines available to the user.
         /// </summary>
         /// <returns> IQueryable with the invoice lines available to the user. </returns>
-        IQueryable<InvoiceLine>? GetAvailableInvoiceLines();
+        IQueryable<InvoiceLine> GetAvailableInvoiceLines();
         /// <summary>
         /// Function return the invoice lines from a invoice that are available to the user.
         /// </summary>
@@ -24,14 +24,13 @@ namespace APIGestionFacturas.Services
         /// </summary>
         /// <param name="id"> The asociated id of the invoice line. </param>
         /// <returns> Task with the requested invoice line selected if allowed or null otherwise. </returns>
-        Task<InvoiceLine?> GetAvailableInvoiceLine(int id);
+        Task<InvoiceLine> GetAvailableInvoiceLine(int id);
         /// <summary>
         /// Function to create a InvoiceLine class inside a database.
         /// </summary>
         /// <param name="invoiceLineData"> Data to create a new invoice line. </param>
         /// <returns> A Task returns the created invoice line. </returns>
-        Task<InvoiceLine> CreateInvoiceLine(InvoiceLineEditable invoiceLineData,
-                                            int invoiceId = -1);
+        Task<InvoiceLine> CreateInvoiceLine(InvoiceLineEditable invoiceLineData);
         /// <summary>
         /// Function to update a InvoiceLine class inside a database.
         /// </summary>

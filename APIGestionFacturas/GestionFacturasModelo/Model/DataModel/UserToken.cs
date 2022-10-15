@@ -12,4 +12,10 @@
         public Guid GuidId { get; set; }                            // Guid of the token
         public DateTime ExpireTime { get; set; }                    // Time the token expire
     }
+
+    public class ResponseToken
+    {
+        public UserToken Token { get; set; }
+        public string UserName { get; set; }
+    }
 }

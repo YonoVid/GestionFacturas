@@ -67,8 +67,8 @@ export class InvoiceTableComponent implements OnInit {
     // Call the service
     this.invoiceService.createInvoiceLine(row).subscribe({
       next: (result)=>{
-        this.dataSource.data.push(row);
-          
+        this.dataSource.data.push(result);
+        row = result;
         this.dataSource._updateChangeSubscription();
       },
       error: (error)=> console.error(error),

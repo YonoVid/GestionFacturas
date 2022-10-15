@@ -105,3 +105,11 @@ app.UseCors("CorsPolicy");
 app.MapControllers();
 
 app.Run();
+
+namespace APIGestionFacturas
+{
+    public partial class Program
+    {
+
+    }
+}

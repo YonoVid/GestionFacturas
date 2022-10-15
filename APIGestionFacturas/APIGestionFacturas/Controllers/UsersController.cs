@@ -55,13 +55,13 @@ namespace APIGestionFacturas.Controllers
                     }
                     else return BadRequest("Contraseña incorrecta");
                 }
-                else return BadRequest("Usuario no encontrado");
+                else return NotFound("Usuario no encontrado");
 
                 // Return generated token
-                return Ok(new
+                return Ok(new ResponseToken
                 {
-                    Token,
-                    Token.UserName
+                    Token = Token,
+                    UserName = Token.UserName
                 });
             }
             catch (NullReferenceException ex)
@@ -71,7 +71,7 @@ namespace APIGestionFacturas.Controllers
             }
             catch (Exception ex)
             {
-                return NotFound("GetToken error " + ex.Message);
+                return NotFound("GetToken error " + ex);
             }
         }
 
@@ -79,12 +79,13 @@ namespace APIGestionFacturas.Controllers
         [Route("[action]")]
         public async Task<ActionResult<User>> Register(UserAuthorization userData)
         {
+            // Variable to store user
             User user;
 
             try
             {
-            // Use service to create and store user
-            user = await _userService.RegisterUser(userData);
+                // Use service to create and store user
+                user = await _userService.RegisterUser(userData);
             }
             catch (InvalidOperationException ex)
             {
@@ -133,8 +134,19 @@ namespace APIGestionFacturas.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Administrator")]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
+            IEnumerable<User> users;
+            try
+            {
+                users = await _userService.GetUsers();
+            }
+            catch (NullReferenceException ex)
+            {
+                // If not database is founded
+                return StatusCode(500, ex.Message);
+            }
+
             // Return all users from the database
-            return Ok(await _userService.GetUsers());
+            return users.ToList();
         }
 
         // GET: api/Users/5
@@ -170,7 +182,7 @@ namespace APIGestionFacturas.Controllers
                 throw ex;
             }
             // Return founded user
-            return Ok(user);
+            return user;
         }
 
         // PUT: api/Users/5
@@ -263,7 +275,7 @@ namespace APIGestionFacturas.Controllers
             catch (KeyNotFoundException ex)
             {
                 // If the user is not founded
-                return NotFound();
+                return NotFound(ex.Message);
             }
 
             // Return message to indicate action was successful
