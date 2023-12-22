@@ -1,6 +1,6 @@
 # GestionFacturas
 
-Proyecto de gestión de facturas que utiliza el framework de desarrollo de Angular.
+Proyecto de gestión de facturas que utiliza el framework de desarrollo de Angular con backend .NET.
 
 ### Consideraciones de uso
 
