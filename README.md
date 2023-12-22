@@ -1,6 +1,6 @@
 # GestionFacturas
 
-Proyecto de Servinform para la plataforma OpenBootcamp.
+Proyecto de gestión de facturas que utiliza el framework de desarrollo de Angular.
 
 ### Consideraciones de uso
 
